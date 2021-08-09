@@ -40,7 +40,7 @@ def __init__(_name: String[64], _symbol: String[32], _max_supply: uint256):
     self.decimals = 0
     self.totalSupply = _max_supply
     self.remainingSupply = _max_supply
-    #self.balances[msg.sender] = self.remainingSupply
+    self.balances[msg.sender] = _max_supply
     self.owner = msg.sender
 
 @view
