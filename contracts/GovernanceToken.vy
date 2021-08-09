@@ -29,13 +29,13 @@ balances: HashMap[address, uint256]
 allowances: HashMap[address, HashMap[address, uint256]]
 
 @external
-def __init__(_name: String[64], _symbol: String[32], _decimals: uint256, _total_supply: uint256):
+def __init__(_name: String[64], _symbol: String[32], _total_supply: uint256):
     self.name = _name
     self.symbol = _symbol
-    self.decimals = _decimals
-    self.balances[msg.sender] = _total_supply
+    self.decimals = 0
+    self.balances[self] = _total_supply
     self.totalSupply = _total_supply
-    log Transfer(ZERO_ADDRESS, msg.sender, _total_supply)
+    log Transfer(ZERO_ADDRESS,self,_total_supply)
 
 @view
 @external

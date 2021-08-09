@@ -34,7 +34,7 @@ minters: public(HashMap[address,bool])
 def __init__(_name: String[64], _symbol: String[32]):
     self.name = _name
     self.symbol = _symbol
-    self.decimals = 18
+    self.decimals = 2
     self.minters[msg.sender] = True
 
 @view
