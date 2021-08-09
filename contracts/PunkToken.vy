@@ -18,16 +18,11 @@ event Transfer:
     receiver: indexed(address)
     value: uint256
 
-event Claim:
-    receiver: indexed(address)
-    amount: uint256
-
 name: public(String[64])
 symbol: public(String[32])
 decimals: public(uint256)
 
 balances: HashMap[address, uint256]
-balances_accounts: HashMap[address, HashMap[address, uint256]]
 allowances: HashMap[address, HashMap[address, uint256]]
 
 totalSupply: public(uint256)
@@ -40,7 +35,7 @@ def __init__(_name: String[64], _symbol: String[32], _max_supply: uint256):
     self.decimals = 0
     self.totalSupply = _max_supply
     self.remainingSupply = _max_supply
-    self.balances[msg.sender] = _max_supply
+    self.balances[self] = _max_supply
     log Transfer(ZERO_ADDRESS,self,_max_supply)
 
 @view
@@ -80,13 +75,8 @@ def transferFrom(_from : address, _to : address, _value : uint256) -> bool:
 
 @external
 def claim(_to : address) -> bool:
-  assert self.remainingSupply - 1 >= 0, "No tokens left to claim"
-
-  self.remainingSupply -= 1
-  self.balances[_to] += 1
-
-  log Claim(_to,1)
-  log Transfer(self,_to,1)
-
-  return True
+    assert self.remainingSupply > 0, "No tokens left to claim"
+    self.remainingSupply -= 1
+    self._transfer(self,_to,1)
+    return True
 
