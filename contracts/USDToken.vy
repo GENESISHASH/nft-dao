@@ -28,14 +28,14 @@ balanceOf: public(HashMap[address, uint256])
 allowances: HashMap[address, HashMap[address, uint256]]
 
 totalSupply: public(uint256)
-minter: public(address)
+minters: public(HashMap[address,bool])
 
 @external
 def __init__(_name: String[64], _symbol: String[32]):
     self.name = _name
     self.symbol = _symbol
     self.decimals = 18
-    self.minter = msg.sender
+    self.minters[msg.sender] = True
 
 @view
 @external
@@ -112,7 +112,7 @@ def mint(_to: address, _value: uint256) -> bool:
     @param _to The account that will receive the created tokens.
     @param _value The amount that will be created.
     """
-    assert msg.sender == self.minter
+    assert self.minters[msg.sender], 'Unauthorized'
     assert _to != ZERO_ADDRESS
 
     self.totalSupply += _value
@@ -129,7 +129,7 @@ def burnFrom(_to: address, _value: uint256) -> bool:
     @param _to The account whose tokens will be burned.
     @param _value The amount that will be burned.
     """
-    assert msg.sender == self.minter
+    assert self.minters[msg.sender], 'Unauthorized'
 
     self.totalSupply -= _value
     self.balanceOf[_to] -= _value
@@ -138,8 +138,18 @@ def burnFrom(_to: address, _value: uint256) -> bool:
 
     return True
 
+#
+# manage minters
+#
 @external
-def set_minter(_minter: address):
-    assert msg.sender == self.minter
-    self.minter = _minter
+def addMinter(_addr: address) -> bool:
+    assert self.minters[msg.sender], 'Unauthorized'
+    self.minters[_addr] = True
+    return True
+
+@external
+def delMinter(_addr: address) -> bool:
+    assert self.minters[msg.sender], 'Unauthorized'
+    self.minters[_addr] = False
+    return True
 

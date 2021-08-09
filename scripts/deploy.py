@@ -21,7 +21,7 @@ def main():
     punk_token.approve(vault,1,{"from":accounts[1]})
 
     print('Transfer Punk from account 1 to vault')
-    vault.receive(punk_token,1,{"from":accounts[1]})
+    vault.deposit(punk_token,1,{"from":accounts[1]})
 
     # confirm balances
     print("Punk balance of account 1 after deposit:", punk_token.balanceOf(accounts[1]))
