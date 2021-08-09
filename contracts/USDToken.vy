@@ -1,5 +1,3 @@
-# @version ^0.2.0
-
 """
 @title USD Stablecoin Token
 @notice Based on the ERC-20 token standard as defined at

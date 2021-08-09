@@ -1,5 +1,3 @@
-# @version ^0.2.0
-
 """
 @title Governance Token
 @notice Based on the ERC-20 token standard as defined at
@@ -112,4 +110,3 @@ def transferFrom(_from : address, _to : address, _value : uint256) -> bool:
     self.allowances[_from][msg.sender] -= _value
     self._transfer(_from, _to, _value)
     return True
-
