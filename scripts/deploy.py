@@ -13,8 +13,8 @@ def main():
     vault = Vault.deploy("Vault", "VAULT", stable_token, {"from":account},publish_source=publish_source)
 
     print("Governance:", gov_token)
-    print("Stablecoin:", usd_token)
-    print("FakePunks:", punk_token)
+    print("Stablecoin:", stable_token)
+    print("FakePunks:", punks_token)
     print("Vault:", vault)
 
     return True
