@@ -20,7 +20,8 @@ def __init__(_name: String[64], _symbol: String[32]):
 
 @external
 def receive(_token_addr: address, _amount: uint256) -> bool:
-    ERC20(_token_addr).transferFrom(msg.sender, self, _amount)
+    ERC20(_token_addr).approve(self,_amount)
+    ERC20(_token_addr).transferFrom(msg.sender,self,_amount)
     self.balances[_token_addr] += _amount
     return True
 

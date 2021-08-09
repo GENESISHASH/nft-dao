@@ -18,7 +18,6 @@ def main():
 
     # deposit punk into the vault
     print('Getting allowance')
-    punk_token.approve(vault,1,{"from":accounts[1]})
     vault.receive(punk_token,1,{"from":accounts[1]})
 
     # confirm balances
