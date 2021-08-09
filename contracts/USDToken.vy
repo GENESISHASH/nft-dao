@@ -24,7 +24,7 @@ name: public(String[64])
 symbol: public(String[32])
 decimals: public(uint256)
 
-balanceOf: public(HashMap[address, uint256])
+balances: HashMap[address, uint256]
 allowances: HashMap[address, HashMap[address, uint256]]
 
 totalSupply: public(uint256)
@@ -36,6 +36,18 @@ def __init__(_name: String[64], _symbol: String[32]):
     self.symbol = _symbol
     self.decimals = 2
     self.minters[msg.sender] = True
+    self.balances[self] = 0
+    log Transfer(ZERO_ADDRESS,self,0)
+
+@view
+@external
+def balanceOf(_owner: address) -> uint256:
+    """
+    @notice Getter to check the current balance of an address
+    @param _owner Address to query the balance of
+    @return Token balance
+    """
+    return self.balances[_owner]
 
 @view
 @external
@@ -69,9 +81,9 @@ def _transfer(_from: address, _to: address, _value: uint256):
     """
     @dev Internal shared logic for transfer and transferFrom
     """
-    assert self.balanceOf[_from] >= _value, "Insufficient balance"
-    self.balanceOf[_from] -= _value
-    self.balanceOf[_to] += _value
+    assert self.balances[_from] >= _value, "Insufficient balance"
+    self.balances[_from] -= _value
+    self.balances[_to] += _value
     log Transfer(_from, _to, _value)
 
 @external
@@ -116,7 +128,7 @@ def mint(_to: address, _value: uint256) -> bool:
     assert _to != ZERO_ADDRESS
 
     self.totalSupply += _value
-    self.balanceOf[_to] += _value
+    self.balances[_to] += _value
 
     log Transfer(ZERO_ADDRESS, _to, _value)
 
@@ -132,7 +144,7 @@ def burnFrom(_to: address, _value: uint256) -> bool:
     assert self.minters[msg.sender], 'Unauthorized'
 
     self.totalSupply -= _value
-    self.balanceOf[_to] -= _value
+    self.balances[_to] -= _value
 
     log Transfer(_to, ZERO_ADDRESS, _value)
 
