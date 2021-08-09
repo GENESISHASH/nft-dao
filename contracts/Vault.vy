@@ -10,13 +10,16 @@ name: public(String[64])
 symbol: public(String[32])
 owner: public(address)
 
+stablecoin: public(address)
+
 balances: HashMap[address, uint256]
 balances_accounts: HashMap[address, HashMap[address, uint256]]
 
 @external
-def __init__(_name: String[64], _symbol: String[32]):
+def __init__(_name:String[64], _symbol:String[32], _stablecoin_addr:address):
     self.name = _name
     self.symbol = _symbol
+    self.stablecoin = _stablecoin_addr
     self.owner = msg.sender
 
 @external
