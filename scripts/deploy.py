@@ -4,7 +4,7 @@ from brownie import GovernanceToken, PunkToken, USDToken, Vault, accounts
 
 def main():
 
-    account = accounts.load('taky')
+    account = accounts.load('dev')
 
     gov_token = GovernanceToken.deploy("Governance", "GOV", 1000000, {'from':account},publish_source=False)
     usd_token = USDToken.deploy("USDG Stablecoin", "USDG", {'from':account},publish_source=False)

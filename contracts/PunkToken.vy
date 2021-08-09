@@ -22,7 +22,6 @@ event Claim:
     receiver: indexed(address)
     amount: uint256
 
-owner: public(address)
 name: public(String[64])
 symbol: public(String[32])
 decimals: public(uint256)
@@ -42,7 +41,7 @@ def __init__(_name: String[64], _symbol: String[32], _max_supply: uint256):
     self.totalSupply = _max_supply
     self.remainingSupply = _max_supply
     self.balances[msg.sender] = _max_supply
-    self.owner = msg.sender
+    log Transfer(ZERO_ADDRESS,self,_total_supply)
 
 @view
 @external
