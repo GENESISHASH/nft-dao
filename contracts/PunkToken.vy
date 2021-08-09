@@ -41,7 +41,7 @@ def __init__(_name: String[64], _symbol: String[32], _max_supply: uint256):
     self.totalSupply = _max_supply
     self.remainingSupply = _max_supply
     self.balances[msg.sender] = _max_supply
-    log Transfer(ZERO_ADDRESS,self,_total_supply)
+    log Transfer(ZERO_ADDRESS,self,_max_supply)
 
 @view
 @external
@@ -86,7 +86,7 @@ def claim(_to : address) -> bool:
   self.balances[_to] += 1
 
   log Claim(_to,1)
-  log Transfer(ZERO_ADDRESS,_to,1)
+  log Transfer(self,_to,1)
 
   return True
 
