@@ -1,6 +1,6 @@
-"""
-@title Vault
-"""
+# @version ^0.2.0
+
+# Vault Contract
 
 from vyper.interfaces import ERC20
 

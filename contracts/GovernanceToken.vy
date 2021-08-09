@@ -1,8 +1,6 @@
-"""
-@title Governance Token
-@notice Based on the ERC-20 token standard as defined at
-        https://eips.ethereum.org/EIPS/eip-20
-"""
+# @version ^0.2.0
+
+# Governance token
 
 from vyper.interfaces import ERC20
 
