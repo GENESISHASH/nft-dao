@@ -1,6 +1,6 @@
 # @version ^0.2.0
 
-# Punk token
+# Punks Token
 
 from vyper.interfaces import ERC20
 

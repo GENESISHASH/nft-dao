@@ -1,6 +1,6 @@
 # @version ^0.2.0
 
-# Stablecoin token
+# Stablecoin Token
 
 from vyper.interfaces import ERC20
 
