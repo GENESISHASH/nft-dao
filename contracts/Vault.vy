@@ -21,7 +21,7 @@ def __init__(_name: String[64], _symbol: String[32]):
 
 @external
 def receive(_token_addr: address, _amount: uint256) -> bool:
-    ERC20(_token_addr).transferFrom(msg.sender,self,_amount)
+    assert success: ERC20(_token_addr).transferFrom(msg.sender,self,_amount)
 
     self.balances[_token_addr] += _amount
     self.balances_accounts[msg.sender][_token_addr] += _amount
