@@ -26,13 +26,13 @@ def main():
   # set a value for punk tokens
   vault.set_token_value(punk_token, 5000, {'from':accounts[0]})
 
+  print("Token value for punk_token:",vault.get_token_value(punk_token))
+
   # deposit punk into vault, opening a position
   print('Depositing punk into vault from accounts[5]')
 
   punk_token.approve(vault,1,{"from":accounts[5]})
-  position_id = vault.deposit(punk_token,1,{'from':accounts[5]})
-
-  print("Position ID", position_id)
+  vault.open_position(punk_token,1,{'from':accounts[5]})
 
   # check vault balance
   print('Punk balance of vault is now:', punk_token.balanceOf(vault))

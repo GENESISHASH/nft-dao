@@ -34,7 +34,7 @@ struct Position:
   ctime: uint256
 
 positions_index: uint256
-positions: public(HashMap[uint256, Position])
+positions: public(HashMap[address, HashMap[uint256,Position]])
 
 balances: HashMap[address, uint256]
 token_values: HashMap[address, uint256]
@@ -53,19 +53,19 @@ def __init__(_name:String[64], _stablecoin_addr:address):
 # open a new position
 #
 @external
-def deposit(_token_addr:address, _amount:uint256) -> uint256:
+def open_position(_token_addr:address, _amount:uint256) -> uint256:
   assert self.token_values[_token_addr] > 0, 'Unsupported token'
   assert ERC20(_token_addr).transferFrom(msg.sender,self,_amount), 'Transfer failed'
 
   self.positions_index += 1
-  self.positions[self.positions_index] = Position({
+  self.positions[msg.sender][self.positions_index] = Position({
     open: True,
     owner: msg.sender,
     asset_type: 'ERC20',
     asset_token: _token_addr,
     asset_amount: _amount,
     asset_index: 0,
-    credit_limit: ((self.token_values[_token_addr] * _amount) * 0.5),
+    credit_limit: (self.token_values[_token_addr] * _amount),
     credit_minted: 0,
     ctime: block.timestamp,
   })
@@ -81,17 +81,17 @@ def deposit(_token_addr:address, _amount:uint256) -> uint256:
 #
 @external
 def borrow(_positions_index:uint256, _amount:uint256) -> bool:
-  assert msg.sender == self.positions[_positions_index].owner, 'Unauthorized'
+  assert msg.sender == self.positions[msg.sender][_positions_index].owner, 'Unauthorized'
 
-  avail_credit: uint256 = self.positions[_positions_index].credit_limit
-  avail_credit -= self.positions[_positions_index].credit_minted
+  avail_credit: uint256 = self.positions[msg.sender][_positions_index].credit_limit
+  avail_credit -= self.positions[msg.sender][_positions_index].credit_minted
 
   assert _amount < avail_credit, 'Unsufficient credit available'
 
   # mint stablecoin
   StableCoin(self.stablecoin_contract).mint(msg.sender,_amount)
 
-  self.positions[_positions_index].credit_minted += _amount
+  self.positions[msg.sender][_positions_index].credit_minted += _amount
 
   log credit_minted(msg.sender,_amount,_positions_index)
 
@@ -100,20 +100,11 @@ def borrow(_positions_index:uint256, _amount:uint256) -> bool:
 #
 # repay stablecoin against a position
 #
+@external
 def repay(_positions_index:uint256, _amount:uint256) -> bool:
-  assert msg.sender == self.positions[_positions_index].owner, 'Unauthorized'
+  assert msg.sender == self.positions[msg.sender][_positions_index].owner, 'Unauthorized'
 
   return True
-
-@view
-@external
-def get_total_available_credit() -> uint256:
-  return 0
-
-@view
-@external
-def get_total_debt() -> uint256:
-  return 0
 
 @external
 def heartbeat() -> bool:

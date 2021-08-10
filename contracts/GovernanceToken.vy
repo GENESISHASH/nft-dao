@@ -1,6 +1,6 @@
 # @version ^0.2.0
 
-# Governance Token
+# Governance token
 
 from vyper.interfaces import ERC20
 
@@ -27,7 +27,7 @@ allowances: HashMap[address, HashMap[address, uint256]]
 def __init__(_name:String[64], _symbol:String[32], _total_supply:uint256):
     self.name = _name
     self.symbol = _symbol
-    self.decimals = 18
+    self.decimals = 0
     self.totalSupply = _total_supply
     self.balances[self] = _total_supply
     log Transfer(ZERO_ADDRESS,self,_total_supply)
