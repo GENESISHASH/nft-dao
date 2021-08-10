@@ -21,7 +21,7 @@ tokenValues: HashMap[address, uint256]
 stablecoinContract: public(address)
 
 interface StableCoin:
-  def mint(_to:address,_value:uint256): nonpayable
+    def mint(_to:address,_value:uint256): nonpayable
 
 @external
 def __init__(_name:String[64], _symbol:String[32], _stablecoin_addr:address):
@@ -31,7 +31,7 @@ def __init__(_name:String[64], _symbol:String[32], _stablecoin_addr:address):
     self.owner = msg.sender
 
 @external
-def deposit(_token_addr: address, _amount: uint256) -> bool:
+def deposit(_token_addr:address, _amount:uint256) -> bool:
     assert self.tokenValues[_token_addr] > 0, 'Token unsupported'
     assert ERC20(_token_addr).transferFrom(msg.sender,self,_amount), 'Transfer failed'
 
@@ -44,14 +44,14 @@ def deposit(_token_addr: address, _amount: uint256) -> bool:
 
 @view
 @external
-def balanceOf(_token_addr: address) -> uint256:
+def balanceOf(_token_addr:address) -> uint256:
     return self.balances[_token_addr]
 
 @view
 @external
 def getTokenValue(_token_addr:address) -> uint256:
-  assert self.tokenValues[_token_addr] > 0, 'Token unsupported'
-  return self.tokenValues[_token_addr]
+    assert self.tokenValues[_token_addr] > 0, 'Token unsupported'
+    return self.tokenValues[_token_addr]
 
 @external
 def setTokenValue(_token_addr:address, _value:uint256) -> bool:

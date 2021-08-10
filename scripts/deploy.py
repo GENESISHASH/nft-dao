@@ -7,10 +7,10 @@ def main():
     account = accounts.load('dev')
     publish_source = False
 
-    gov_token = GovernanceToken.deploy("Governance", "GOV", 1000000, {'from':account},publish_source=publish_source)
-    stable_token = StableToken.deploy("USDG Stablecoin", "USDG", {'from':account},publish_source=publish_source)
-    punks_token = PunksToken.deploy("FakePunks", "FPUNK", 100, {'from':account},publish_source=publish_source)
-    vault = Vault.deploy("Vault", "VAULT", stable_token, {"from":account},publish_source=publish_source)
+    gov_token = GovernanceToken.deploy("Governance", "GOV", 1000000, {'from':account}, publish_source=publish_source)
+    stable_token = StableToken.deploy("PUSD Stablecoin", "PUSD", {'from':account}, publish_source=publish_source)
+    punks_token = PunksToken.deploy("FakePunks", "FPUNK", 100, {'from':account}, publish_source=publish_source)
+    vault = Vault.deploy("Vault", "VAULT", stable_token, {"from":account}, publish_source=publish_source)
 
     stable_token.addMinter(vault,{'from':account})
     vault.setTokenValue(punks_token,666)
