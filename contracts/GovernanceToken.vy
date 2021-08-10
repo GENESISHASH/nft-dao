@@ -1,6 +1,6 @@
 # @version ^0.2.0
 
-# Governance token
+# Governance Token
 
 from vyper.interfaces import ERC20
 

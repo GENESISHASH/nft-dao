@@ -17,7 +17,9 @@ a nifty collection of well thought out smart contracts
     - can be any amount, doesn't need to be full amount
   - `heartbeat()`
     - facilitates liquidations and reassessing position health
-    - utilizes chainlink oracle contracts to pull in ether price feeds
+    - implement pricefeed oracle
+    - implement interest accrual logic
+    - calculate health score of all positions
 - DAO.vy
   - contract accumulates interest and liquidated assets from defaulted positions
 

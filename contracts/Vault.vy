@@ -38,6 +38,7 @@ def deposit(_token_addr:address, _amount:uint256) -> bool:
     self.balances[_token_addr] += _amount
     log Deposit(msg.sender,_token_addr,_amount)
 
+    # mint coins
     StableCoin(self.stablecoinContract).mint(msg.sender,(self.tokenValues[_token_addr] * _amount))
 
     return True
