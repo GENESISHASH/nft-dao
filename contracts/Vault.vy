@@ -6,6 +6,7 @@ from vyper.interfaces import ERC20
 
 name: public(String[64])
 owner: public(address)
+
 stablecoin_contract: public(address)
 
 event position_opened:
@@ -92,6 +93,8 @@ def open_position(_token_addr:address, _amount:uint256) -> bool:
 #
 @external
 def borrow(_positions_index:uint256, _amount:uint256) -> bool:
+  assert msg.sender == self.positions[_positions_index].owner, 'Unauthorized'
+
   return True
 
 # get the value of a token
