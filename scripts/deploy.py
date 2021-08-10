@@ -14,14 +14,14 @@ def main():
     vault = Vault.deploy("Vault", stable_token, {"from":account}, publish_source=publish_source)
 
     stable_token.add_minter(vault,{'from':account})
-    vault.set_token_value(punks_token,3000000)
+    vault.set_token_value(punks_token,30000)
 
     punks_token.claim(account,{'from':account})
     punks_token.approve(vault,1,{'from':account})
 
     vault.open_position(punks_token,1,{'from':account})
-    vault.borrow(3500000,{'from':account})
-    vault.payment(1,1000000,{'from':account})
+    vault.borrow(1,15000,{'from':account})
+    vault.payment(1,5000,{'from':account})
 
     print('-------------------------------------------')
 
@@ -33,7 +33,6 @@ def main():
         prefix = 'https://ropsten.etherscan.io/address/'
     else:
         prefix = 'https://etherscan.io/address/'
-
 
     print("Governance:", prefix + gov_token)
     print("Stablecoin:", prefix + stable_token)
