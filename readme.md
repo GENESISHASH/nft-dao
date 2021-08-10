@@ -2,6 +2,7 @@
 a nifty collection of well thought out smart contracts
 
 # @todo
+- deploy Punks clone on Ropsten for testing
 - Vault.vy
   - add new hybrid hashmap called `positions`
     - ethereum addresses can each have multiple "positions" open
