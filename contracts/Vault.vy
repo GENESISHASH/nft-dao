@@ -130,9 +130,9 @@ def borrow(_position_index:uint256, _amount:uint256) -> bool:
 
   self.total_minted += _amount
 
-  this.add_interest(msg.sender,_position_index)
-
   log credit_minted(msg.sender,_position_index,_amount)
+
+  self.add_interest(msg.sender,_position_index)
 
   return True
 
@@ -203,7 +203,7 @@ def close_position(_position_index:uint256) -> bool:
 
   assert ERC20(pos_token).transferFrom(self,pos_owner,pos_amount), 'Transfer failed'
 
-  self.positions[msg.sender][_position_index].closed = True
+  self.positions[msg.sender][_position_index].open = False
 
   log position_closed(msg.sender,_position_index)
 
@@ -215,10 +215,10 @@ def add_interest(_address:address,_position_index:uint256) -> bool:
   assert not self.positions[_address][_position_index].repaid, 'Position repaid'
   assert self.positions[_address][_position_index].open, 'Position closed'
 
-  interest_amount = 10
+  amount: uint256 = 10
   self.positions[_address][_position_index].debt_interest += amount
 
-  log interest_added(_address,_position_index,interest_amount)
+  log interest_added(_address,_position_index,amount)
 
   return True
 
