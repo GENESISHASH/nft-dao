@@ -34,11 +34,11 @@ def main():
     else:
         prefix = 'https://etherscan.io/address/'
 
-    print("Governance:", prefix + gov_token)
-    print("Stablecoin:", prefix + stable_token)
-    print("FakePunks:", prefix + punks_token)
-    print("Vault:", prefix + vault)
-    print("Wallet:", prefix + account.address)
+    print("Governance:", prefix + str(gov_token))
+    print("Stablecoin:", prefix + str(stable_token))
+    print("FakePunks:", prefix + str(punks_token))
+    print("Vault:", prefix + str(vault))
+    print("Wallet:", prefix + str(account))
 
     return True
 
