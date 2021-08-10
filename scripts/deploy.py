@@ -26,9 +26,9 @@ def main():
 
   prefix = 'https://etherscan.io/address/'
 
-  if os.environ.get('NETWORK') is 'kovan':
+  if os.environ.get('NETWORK') == 'kovan':
     prefix = 'https://kovan.etherscan.io/address/'
-  if os.environ.get('NETWORK') is  'ropsten':
+  if os.environ.get('NETWORK') ==  'ropsten':
     prefix = 'https://ropsten.etherscan.io/address/'
 
   print("Governance:", prefix + str(gov_token))

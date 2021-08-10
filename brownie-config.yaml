@@ -14,6 +14,13 @@ networks:
         reverting_tx_gas_limit: max
         default_contract_owner: true
         cmd_settings: null
+    kovan:
+        gas_limit: max
+        gas_buffer: 1
+        gas_price: 0
+        reverting_tx_gas_limit: max
+        default_contract_owner: true
+        cmd_settings: null
     live:
         gas_limit: auto
         gas_buffer: 1.1
