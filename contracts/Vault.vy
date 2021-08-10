@@ -17,6 +17,11 @@ event position_closed:
     owner: address
     index: uint256
 
+event credit_minted:
+    owner: address
+    amount: uint256
+    index: uint256
+
 struct Position:
     open: bool
     owner: address
@@ -44,28 +49,11 @@ def __init__(_name:String[64], _stablecoin_addr:address):
     self.stablecoin_contract = _stablecoin_addr
     self.positions_index = 0
 
-@external
-def deposit(_token_addr:address, _amount:uint256) -> bool:
-    assert self.token_values[_token_addr] > 0, 'Token unsupported'
-    assert ERC20(_token_addr).transferFrom(msg.sender,self,_amount), 'Token transfer failed'
-
-    self.balances[_token_addr] += _amount
-
-    #log Deposit(msg.sender,_token_addr,_amount)
-
-    # @todo: determine price of asset
-    # @todo: open position
-
-    # mint coins
-    StableCoin(self.stablecoin_contract).mint(msg.sender,(self.token_values[_token_addr] * _amount))
-
-    return True
-
 #
 # open a new position
 #
 @external
-def open_position(_token_addr:address, _amount:uint256) -> bool:
+def deposit(_token_addr:address, _amount:uint256) -> bool:
   assert self.token_values[_token_addr] > 0, 'Unsupported token'
   assert ERC20(_token_addr).transferFrom(msg.sender,self,_amount), 'Transfer failed'
 
@@ -77,7 +65,7 @@ def open_position(_token_addr:address, _amount:uint256) -> bool:
     asset_token: _token_addr,
     asset_amount: _amount,
     asset_index: 0,
-    credit_limit: (self.token_values[_token_addr] * _amount),
+    credit_limit: ((self.token_values[_token_addr] * _amount) * 0.5),
     credit_minted: 0,
     ctime: block.timestamp,
   })
@@ -95,7 +83,37 @@ def open_position(_token_addr:address, _amount:uint256) -> bool:
 def borrow(_positions_index:uint256, _amount:uint256) -> bool:
   assert msg.sender == self.positions[_positions_index].owner, 'Unauthorized'
 
+  avail_credit: uint256 = self.positions[_positions_index].credit_limit
+  avail_credit -= self.positions[_positions_index].credit_minted
+
+  assert _amount < avail_credit, 'Unsufficient credit available'
+
+  # mint stablecoin
+  StableCoin(self.stablecoin_contract).mint(msg.sender,_amount)
+
+  self.positions[_positions_index].credit_minted += _amount
+
+  log credit_minted(msg.sender,_amount,_positions_index)
+
   return True
+
+#
+# repay stablecoin against a position
+#
+def repay(_positions_index:uint256, _amount:uint256) -> bool:
+  assert msg.sender == self.positions[_positions_index].owner, 'Unauthorized'
+
+  return True
+
+@view
+@external
+def get_total_available_credit() -> uint256:
+  return 0
+
+@view
+@external
+def get_total_debt() -> uint256:
+  return 0
 
 # get the value of a token
 @view
