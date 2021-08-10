@@ -60,7 +60,6 @@ def _transfer(_from: address, _to: address, _value: uint256):
 
 @external
 def transfer(_to : address, _value : uint256) -> bool:
-
     self._transfer(msg.sender, _to, _value)
     return True
 
@@ -94,9 +93,6 @@ def burnFrom(_to: address, _value: uint256) -> bool:
 
     return True
 
-#
-# manage minters
-#
 @external
 def addMinter(_addr: address) -> bool:
     assert self.minters[msg.sender], 'Unauthorized'
