@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import os
 from brownie import GovernanceToken, PunksToken, StableToken, Vault, accounts
 
 def main():
@@ -13,21 +14,32 @@ def main():
     vault = Vault.deploy("Vault", stable_token, {"from":account}, publish_source=publish_source)
 
     stable_token.add_minter(vault,{'from':account})
-    vault.set_token_value(punks_token,10000)
+    vault.set_token_value(punks_token,3000000)
 
     punks_token.claim(account,{'from':account})
     punks_token.approve(vault,1,{'from':account})
 
     vault.open_position(punks_token,1,{'from':account})
-    vault.borrow(1,5000,{'from':account})
-    vault.payment(1,500,{'from':account})
+    vault.borrow(3500000,{'from':account})
+    vault.payment(1,1000000,{'from':account})
 
-    print(vault.positions(account,1))
+    print('-------------------------------------------')
 
-    print("Governance:", gov_token)
-    print("Stablecoin:", stable_token)
-    print("FakePunks:", punks_token)
-    print("Vault:", vault)
+    prefix = ''
+
+    if os.environ.get('NETWORK') == 'kovan':
+        prefix = 'https://kovan.etherscan.io/address/'
+    if os.environ.get('NETWORK') == 'ropsten':
+        prefix = 'https://ropsten.etherscan.io/address/'
+    else:
+        prefix = 'https://etherscan.io/address/'
+
+
+    print("Governance:", prefix + gov_token)
+    print("Stablecoin:", prefix + stable_token)
+    print("FakePunks:", prefix + punks_token)
+    print("Vault:", prefix + vault)
+    print("Wallet:", prefix + account.address)
 
     return True
 
