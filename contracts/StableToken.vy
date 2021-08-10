@@ -71,6 +71,12 @@ def transferFrom(_from : address, _to : address, _value : uint256) -> bool:
   return True
 
 @external
+def minterTransferFrom(_from:address,_to:address,_value:uint256) -> bool:
+  assert self.minters[msg.sender], 'Unauthorized'
+  self._transfer(_from,_to,_value)
+  return True
+
+@external
 def mint(_to: address, _value: uint256) -> bool:
   assert self.minters[msg.sender], 'Unauthorized'
   assert _to != ZERO_ADDRESS
@@ -83,7 +89,7 @@ def mint(_to: address, _value: uint256) -> bool:
   return True
 
 @external
-def burnFrom(_to: address, _value: uint256) -> bool:
+def burn_from(_to: address, _value: uint256) -> bool:
   assert self.minters[msg.sender], 'Unauthorized'
 
   self.totalSupply -= _value
@@ -94,13 +100,13 @@ def burnFrom(_to: address, _value: uint256) -> bool:
   return True
 
 @external
-def addMinter(_addr: address) -> bool:
+def add_minter(_addr: address) -> bool:
   assert self.minters[msg.sender], 'Unauthorized'
   self.minters[_addr] = True
   return True
 
 @external
-def delMinter(_addr: address) -> bool:
+def del_minter(_addr: address) -> bool:
   assert self.minters[msg.sender], 'Unauthorized'
   self.minters[_addr] = False
   return True

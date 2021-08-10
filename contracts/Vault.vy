@@ -33,6 +33,11 @@ event position_repaid:
   index: uint256
   amount: uint256
 
+event interest_added:
+  owner: address
+  index: uint256
+  amount: uint256
+
 struct Position:
   open: bool
   repaid: bool
@@ -62,7 +67,7 @@ total_repaid: public(uint256)
 
 interface StableCoin:
   def mint(_to:address,_value:uint256): nonpayable
-  def transferFrom(_from:address,_to:address,_value:uint256): nonpayable
+  def minterTransferFrom(_from:address,_to:address,_value:uint256): nonpayable
 
 @external
 def __init__(_name:String[64], _stablecoin_addr:address):
@@ -70,9 +75,6 @@ def __init__(_name:String[64], _stablecoin_addr:address):
   self.owner = msg.sender
   self.stablecoin_contract = _stablecoin_addr
 
-#
-# open a new position
-#
 @external
 def open_position(_token_addr:address, _amount:uint256) -> bool:
   assert self.token_values[_token_addr] > 0, 'Unsupported token'
@@ -109,9 +111,6 @@ def open_position(_token_addr:address, _amount:uint256) -> bool:
 
   return True
 
-#
-# borrow against a position
-#
 @external
 def borrow(_position_index:uint256, _amount:uint256) -> bool:
   assert msg.sender == self.positions[msg.sender][_position_index].owner, 'Unauthorized'
@@ -131,13 +130,12 @@ def borrow(_position_index:uint256, _amount:uint256) -> bool:
 
   self.total_minted += _amount
 
+  this.add_interest(msg.sender,_position_index)
+
   log credit_minted(msg.sender,_position_index,_amount)
 
   return True
 
-#
-# apply a payment against an open position
-#
 @external
 def payment(_position_index:uint256, _amount:uint256) -> bool:
   assert msg.sender == self.positions[msg.sender][_position_index].owner, 'Unauthorized'
@@ -146,7 +144,7 @@ def payment(_position_index:uint256, _amount:uint256) -> bool:
   assert self.positions[msg.sender][_position_index].open, 'Position closed'
 
   # send pusd to pay down the debt
-  StableCoin(self.stablecoin_contract).transferFrom(msg.sender,self,_amount)
+  StableCoin(self.stablecoin_contract).minterTransferFrom(msg.sender,self,_amount)
 
   cur_amount: uint256 = _amount
   cur_interest: uint256 = self.positions[msg.sender][_position_index].debt_interest
@@ -193,7 +191,35 @@ def payment(_position_index:uint256, _amount:uint256) -> bool:
   return True
 
 @external
-def withdraw() -> bool:
+def close_position(_position_index:uint256) -> bool:
+  assert msg.sender == self.positions[msg.sender][_position_index].owner, 'Unauthorized'
+  assert not self.positions[msg.sender][_position_index].liquidated, 'Position liquidated'
+  assert self.positions[msg.sender][_position_index].repaid, 'Position not repaid'
+  assert self.positions[msg.sender][_position_index].open, 'Position closed'
+
+  pos_owner: address = self.positions[msg.sender][_position_index].owner
+  pos_token: address = self.positions[msg.sender][_position_index].asset_token
+  pos_amount: uint256 = self.positions[msg.sender][_position_index].asset_amount
+
+  assert ERC20(pos_token).transferFrom(self,pos_owner,pos_amount), 'Transfer failed'
+
+  self.positions[msg.sender][_position_index].closed = True
+
+  log position_closed(msg.sender,_position_index)
+
+  return True
+
+@internal
+def add_interest(_address:address,_position_index:uint256) -> bool:
+  assert not self.positions[_address][_position_index].liquidated, 'Position liquidated'
+  assert not self.positions[_address][_position_index].repaid, 'Position repaid'
+  assert self.positions[_address][_position_index].open, 'Position closed'
+
+  interest_amount = 10
+  self.positions[_address][_position_index].debt_interest += amount
+
+  log interest_added(_address,_position_index,interest_amount)
+
   return True
 
 @external

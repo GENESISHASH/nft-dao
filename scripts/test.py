@@ -9,7 +9,7 @@ def main():
   vault = Vault.deploy("Vault", stablecoin, {"from":accounts[0]})
 
   # add vault as stablecoin minter
-  stablecoin.addMinter(vault, {'from':accounts[0]})
+  stablecoin.add_minter(vault, {'from':accounts[0]})
 
   # deploy and claim a punk token
   punk_token = PunksToken.deploy("PunkToken", "PUNK", 10, {'from':accounts[0]})
@@ -29,8 +29,10 @@ def main():
   print('Stablecoin balance of accounts[5] is now:', stablecoin.balanceOf(accounts[5]))
 
   print('Paying back half the position')
-  stablecoin.approve(vault,2500,{"from":accounts[5]})
   vault.payment(1,2500,{'from':accounts[5]})
+
+  print('Stablecoin balance of accounts[5] is now:', stablecoin.balanceOf(accounts[5]))
+  print('Stablecoin balance of vault is now:', stablecoin.balanceOf(vault))
 
   return True
 
