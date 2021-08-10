@@ -1,0 +1,8 @@
+{
+  "repository": "https://github.com/tosadvisor/nft-contracts.git",
+  "author": "<taky@taky.com>",
+  "scripts": {
+    "deploy-ropsten": "sh ./deploy-ropsten.sh",
+    "deploy-kovan": "sh ./deploy-kovan.sh"
+  }
+}

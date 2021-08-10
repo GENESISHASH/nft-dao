@@ -1,4 +1,4 @@
-# @version ^0.2.0
+# @version ^0.2.8
 
 # DAO Contract
 
@@ -6,6 +6,7 @@ from vyper.interfaces import ERC20
 
 name: public(String[64])
 owner: public(address)
+
 balances: HashMap[address,uint256]
 
 @external

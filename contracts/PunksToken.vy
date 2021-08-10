@@ -1,4 +1,4 @@
-# @version ^0.2.0
+# @version ^0.2.8
 
 # Punks Token
 
@@ -32,9 +32,9 @@ def __init__(_name: String[64], _symbol: String[32], _max_supply: uint256):
     self.symbol = _symbol
     self.decimals = 0
     self.totalSupply = _max_supply
-    self.remainingSupply = _max_supply
-    self.balances[self] = _max_supply
-    log Transfer(ZERO_ADDRESS,self,_max_supply)
+    self.remainingSupply = self.totalSupply
+    self.balances[self] = self.totalSupply
+    log Transfer(ZERO_ADDRESS,self,self.totalSupply)
 
 @view
 @external

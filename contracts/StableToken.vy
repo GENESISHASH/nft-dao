@@ -1,4 +1,4 @@
-# @version ^0.2.0
+# @version ^0.2.8
 
 # Stablecoin Token
 
@@ -18,7 +18,7 @@ event Transfer:
 
 name: public(String[64])
 symbol: public(String[32])
-decimals: public(uint256)
+decimals: public(int128)
 
 balances: HashMap[address, uint256]
 allowances: HashMap[address, HashMap[address, uint256]]
@@ -30,7 +30,7 @@ minters: public(HashMap[address,bool])
 def __init__(_name: String[64], _symbol: String[32]):
   self.name = _name
   self.symbol = _symbol
-  self.decimals = 0
+  self.decimals = 18
   self.minters[msg.sender] = True
   self.balances[self] = 0
   log Transfer(ZERO_ADDRESS,self,0)

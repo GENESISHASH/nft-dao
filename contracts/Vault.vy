@@ -1,4 +1,4 @@
-# @version ^0.2.0
+# @version 0.2.8
 
 # Vault Contract
 
@@ -8,6 +8,9 @@ name: public(String[64])
 owner: public(address)
 
 stablecoin_contract: public(address)
+
+apr_percent: public(decimal)
+collateral_percent: public(decimal)
 
 event position_opened:
   owner: address
@@ -47,12 +50,17 @@ struct Position:
   asset_token: address
   asset_amount: uint256
   asset_index: uint256
+  asset_value: uint256
   credit_limit: uint256
   credit_minted: uint256
   debt_principal: uint256
   debt_interest: uint256
-  amount_paid: uint256
-  ctime: uint256
+  paid_principal: uint256
+  paid_interest: uint256
+  paid_total: uint256
+  time_repaid: uint256
+  time_interest: uint256
+  time_created: uint256
 
 positions: public(HashMap[address, HashMap[uint256,Position]])
 positions_indexes: public(HashMap[address,uint256])
@@ -75,6 +83,29 @@ def __init__(_name:String[64], _stablecoin_addr:address):
   self.owner = msg.sender
   self.stablecoin_contract = _stablecoin_addr
 
+  self.apr_percent = 0.02
+  self.collateral_percent = 0.50
+
+@internal
+def _add_interest(_address:address, _position_index:uint256) -> bool:
+
+  interest: uint256 = (self.positions[_address][_position_index].debt_principal)
+  interest += self.positions[_address][_position_index].debt_interest
+
+  _new_interest: decimal = convert(interest,decimal) * self.apr_percent
+  new_interest: uint256 = convert(_new_interest,uint256)
+
+  self.positions[_address][_position_index].debt_interest += new_interest
+  self.positions[_address][_position_index].time_interest = block.timestamp
+
+  log interest_added(_address,_position_index,new_interest)
+
+  return True
+
+@external
+def get_position(_addr:address,_index:uint256) -> uint256:
+  return self.positions[_addr][_index].asset_value
+
 @external
 def open_position(_token_addr:address, _amount:uint256) -> bool:
   assert self.token_values[_token_addr] > 0, 'Unsupported token'
@@ -85,6 +116,9 @@ def open_position(_token_addr:address, _amount:uint256) -> bool:
 
   asset_value: uint256 = (self.token_values[_token_addr] * _amount)
 
+  _colat_value: decimal = convert(asset_value,decimal) * self.collateral_percent
+  colat_value: uint256 = convert(_colat_value,uint256)
+
   self.positions[msg.sender][cur_index] = Position({
     open: True,
     repaid: False,
@@ -94,18 +128,23 @@ def open_position(_token_addr:address, _amount:uint256) -> bool:
     asset_token: _token_addr,
     asset_amount: _amount,
     asset_index: 0,
-    credit_limit: asset_value,
+    asset_value: asset_value,
+    credit_limit: colat_value,
     credit_minted: 0,
     debt_principal: 0,
     debt_interest: 0,
-    amount_paid: 0,
-    ctime: block.timestamp,
+    paid_principal: 0,
+    paid_interest: 0,
+    paid_total: 0,
+    time_repaid: 0,
+    time_interest: block.timestamp,
+    time_created: block.timestamp,
   })
 
   self.balances[_token_addr] += _amount
 
   self.total_positions += 1
-  self.total_credit += asset_value
+  self.total_credit += colat_value
 
   log position_opened(msg.sender,cur_index,asset_value)
 
@@ -120,19 +159,19 @@ def borrow(_position_index:uint256, _amount:uint256) -> bool:
   avail_credit: uint256 = self.positions[msg.sender][_position_index].credit_limit
   avail_credit -= self.positions[msg.sender][_position_index].credit_minted
 
-  assert _amount < avail_credit, 'Insufficient available credit'
+  assert _amount <= avail_credit, 'Insufficient available credit'
 
   # mint
   StableCoin(self.stablecoin_contract).mint(msg.sender,_amount)
+  self.total_minted += _amount
 
   self.positions[msg.sender][_position_index].credit_minted += _amount
   self.positions[msg.sender][_position_index].debt_principal += _amount
 
-  self.total_minted += _amount
-
   log credit_minted(msg.sender,_position_index,_amount)
 
-  self.add_interest(msg.sender,_position_index)
+  # temp
+  #self._add_interest(msg.sender,_position_index)
 
   return True
 
@@ -143,7 +182,7 @@ def payment(_position_index:uint256, _amount:uint256) -> bool:
   assert not self.positions[msg.sender][_position_index].repaid, 'Position repaid'
   assert self.positions[msg.sender][_position_index].open, 'Position closed'
 
-  # send pusd to pay down the debt
+  # send stablecoin to pay down the debt
   StableCoin(self.stablecoin_contract).minterTransferFrom(msg.sender,self,_amount)
 
   cur_amount: uint256 = _amount
@@ -177,7 +216,9 @@ def payment(_position_index:uint256, _amount:uint256) -> bool:
   paid += paid_interest
   paid += paid_principal
 
-  self.positions[msg.sender][_position_index].amount_paid += paid
+  self.positions[msg.sender][_position_index].paid_interest += paid_interest
+  self.positions[msg.sender][_position_index].paid_principal += paid_principal
+  self.positions[msg.sender][_position_index].paid_total += paid
 
   log payment_applied(msg.sender,_position_index,paid)
 
@@ -186,6 +227,8 @@ def payment(_position_index:uint256, _amount:uint256) -> bool:
       self.positions[msg.sender][_position_index].debt_interest == 0:
 
     self.positions[msg.sender][_position_index].repaid = True
+    self.positions[msg.sender][_position_index].time_repaid = block.timestamp
+
     log position_repaid(msg.sender,_position_index,self.positions[msg.sender][_position_index].credit_minted)
 
   return True
@@ -206,19 +249,6 @@ def close_position(_position_index:uint256) -> bool:
   self.positions[msg.sender][_position_index].open = False
 
   log position_closed(msg.sender,_position_index)
-
-  return True
-
-@internal
-def add_interest(_address:address,_position_index:uint256) -> bool:
-  assert not self.positions[_address][_position_index].liquidated, 'Position liquidated'
-  assert not self.positions[_address][_position_index].repaid, 'Position repaid'
-  assert self.positions[_address][_position_index].open, 'Position closed'
-
-  amount: uint256 = 10
-  self.positions[_address][_position_index].debt_interest += amount
-
-  log interest_added(_address,_position_index,amount)
 
   return True
 
