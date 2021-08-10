@@ -4,7 +4,7 @@ import os
 from brownie import GovernanceToken, PunksToken, StableToken, Vault, accounts
 
 def main():
-  publish_source = False
+  publish_source = True
   account = accounts.load('devel')
 
   gov_token = GovernanceToken.deploy("Governance", "GOV", 1000000, {'from':account}, publish_source=publish_source)
