@@ -25,7 +25,7 @@ allowances: HashMap[address, HashMap[address, uint256]]
 
 @external
 def __init__(_name:String[64],_symbol:String[32],_supply:uint256):
-    self.decimals = 18
+    self.decimals = 4
     init_supply: uint256 = _supply * 10 ** self.decimals
 
     self.name = _name
