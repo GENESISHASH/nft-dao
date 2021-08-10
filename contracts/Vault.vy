@@ -1,6 +1,6 @@
-# @version 0.2.15
+# @version ^0.2.15
 
-# Vault Contract
+# Vault
 
 from vyper.interfaces import ERC20
 
@@ -184,6 +184,8 @@ def payment(_position_index:uint256, _amount:uint256) -> bool:
 
   # send stablecoin to pay down the debt
   StableCoin(self.stablecoin_contract).minterTransferFrom(msg.sender,self,_amount)
+
+  self.total_repaid += _amount
 
   cur_amount: uint256 = _amount
   cur_interest: uint256 = self.positions[msg.sender][_position_index].debt_interest

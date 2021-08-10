@@ -1,7 +1,6 @@
 {
   "author": "<taky@taky.com>",
   "scripts": {
-    "deploy": "deploy-ropsten",
     "deploy-ropsten": "sh ./deploy-ropsten.sh",
     "deploy-kovan": "sh ./deploy-kovan.sh"
   }

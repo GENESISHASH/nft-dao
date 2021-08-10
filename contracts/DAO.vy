@@ -1,6 +1,6 @@
 # @version ^0.2.15
 
-# DAO Contract
+# DAO
 
 from vyper.interfaces import ERC20
 
