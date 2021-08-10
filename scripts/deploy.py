@@ -12,6 +12,9 @@ def main():
     punks_token = PunksToken.deploy("FakePunks", "FPUNK", 100, {'from':account},publish_source=publish_source)
     vault = Vault.deploy("Vault", "VAULT", stable_token, {"from":account},publish_source=publish_source)
 
+    stable_token.addMinter(vault,{'from':account})
+    vault.setTokenValue(punks_token,666)
+
     print("Governance:", gov_token)
     print("Stablecoin:", stable_token)
     print("FakePunks:", punks_token)

@@ -1,18 +1,18 @@
 #!/usr/bin/python3
 
-from brownie import PunkToken, USDToken, Vault, accounts
+from brownie import PunksToken, StableToken, Vault, accounts
 
 def main():
 
     # setup stablecoin and vault
-    usd_token = USDToken.deploy("USDToken", "USDNFT", {'from':accounts[0]})
+    usd_token = StableToken.deploy("USDToken", "USDNFT", {'from':accounts[0]})
     vault = Vault.deploy("Vault", "VAULT", usd_token, {"from":accounts[0]})
 
     # add vault as stablecoin minter
     usd_token.addMinter(vault, {'from':accounts[0]})
 
     # deploy punk token
-    punk_token = PunkToken.deploy("PunkToken", "PUNK", 10, {'from':accounts[0]})
+    punk_token = PunksToken.deploy("PunkToken", "PUNK", 10, {'from':accounts[0]})
 
     # set vault value of punks to 100
     vault.setTokenValue(punk_token, 100, {'from':accounts[0]})

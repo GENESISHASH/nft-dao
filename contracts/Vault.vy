@@ -18,7 +18,7 @@ symbol: public(String[32])
 owner: public(address)
 balances: HashMap[address, uint256]
 tokenValues: HashMap[address, uint256]
-stablecoinAddress: public(address)
+stablecoinContract: public(address)
 
 interface StableCoin:
   def mint(_to:address,_value:uint256): nonpayable
@@ -27,7 +27,7 @@ interface StableCoin:
 def __init__(_name:String[64], _symbol:String[32], _stablecoin_addr:address):
     self.name = _name
     self.symbol = _symbol
-    self.stablecoinAddress = _stablecoin_addr
+    self.stablecoinContract = _stablecoin_addr
     self.owner = msg.sender
 
 @external
@@ -38,8 +38,7 @@ def deposit(_token_addr: address, _amount: uint256) -> bool:
     self.balances[_token_addr] += _amount
     log Deposit(msg.sender,_token_addr,_amount)
 
-    # mint stablecoin
-    StableCoin(self.stablecoinAddress).mint(msg.sender,(self.tokenValues[_token_addr] * _amount))
+    StableCoin(self.stablecoinContract).mint(msg.sender,(self.tokenValues[_token_addr] * _amount))
 
     return True
 
@@ -48,6 +47,7 @@ def deposit(_token_addr: address, _amount: uint256) -> bool:
 def balanceOf(_token_addr: address) -> uint256:
     return self.balances[_token_addr]
 
+@view
 @external
 def getTokenValue(_token_addr:address) -> uint256:
   assert self.tokenValues[_token_addr] > 0, 'Token unsupported'

@@ -30,7 +30,7 @@ remainingSupply: public(uint256)
 def __init__(_name: String[64], _symbol: String[32], _max_supply: uint256):
     self.name = _name
     self.symbol = _symbol
-    self.decimals = 0
+    self.decimals = 18
     self.totalSupply = _max_supply
     self.remainingSupply = _max_supply
     self.balances[self] = _max_supply
