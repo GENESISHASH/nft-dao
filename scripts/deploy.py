@@ -22,7 +22,7 @@ def main():
   account = accounts.load('devel')
 
   # deploy dao
-  _dao = _dao.deploy('DAO',{'from':account},publish_source=publish_source)
+  _dao = dao.deploy('DAO',{'from':account},publish_source=publish_source)
 
   # deploy cryptopunks contract and claim a few punks
   _cryptopunks = cryptopunks.deploy({'from':account},publish_source=publish_source)
@@ -42,7 +42,7 @@ def main():
   _stable_token.add_minter(_dao,{'from':account})
 
   # mint 2m for the dao
-  _stable_token.mint(dao,2000000,{'from':account})
+  _stable_token.mint(_dao,2000000,{'from':account})
 
   # open a new position with my ape
   _vault.open_position(PUNK_INDEX_APE,{'from':account})
@@ -69,12 +69,14 @@ def main():
     prefix = 'https://ropsten.etherscan.io/address/'
 
   print("\n\n")
+
   print("wallet", prefix + str(account))
-  print('---')
   print("_dao", prefix + str(_dao))
   print("_vault", prefix + str(_vault))
   print("_stable_token", prefix + str(_stable_token))
   print("_cryptopunks", prefix + str(_cryptopunks))
+
+  print("\n\n")
 
   return True
 
