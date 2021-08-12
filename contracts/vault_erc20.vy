@@ -87,7 +87,7 @@ def __init__(_name:String[64], _stablecoin_addr:address):
   self.collateral_percent = 0.50
 
 @internal
-def _add_interest(_address:address, _position_index:uint256) -> bool:
+def add_interest(_address:address, _position_index:uint256) -> bool:
 
   interest: uint256 = (self.positions[_address][_position_index].debt_principal)
   interest += self.positions[_address][_position_index].debt_interest
@@ -101,10 +101,6 @@ def _add_interest(_address:address, _position_index:uint256) -> bool:
   log interest_added(_address,_position_index,new_interest)
 
   return True
-
-@external
-def get_position(_addr:address,_index:uint256) -> uint256:
-  return self.positions[_addr][_index].asset_value
 
 @external
 def open_position(_token_addr:address, _amount:uint256) -> bool:
@@ -176,7 +172,7 @@ def borrow(_position_index:uint256, _amount:uint256) -> bool:
   return True
 
 @external
-def payment(_position_index:uint256, _amount:uint256) -> bool:
+def repay(_position_index:uint256, _amount:uint256) -> bool:
   assert msg.sender == self.positions[msg.sender][_position_index].owner, 'Unauthorized'
   assert not self.positions[msg.sender][_position_index].liquidated, 'Position liquidated'
   assert not self.positions[msg.sender][_position_index].repaid, 'Position repaid'

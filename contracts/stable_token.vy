@@ -27,10 +27,10 @@ totalSupply: public(uint256)
 minters: public(HashMap[address,bool])
 
 @external
-def __init__(_name: String[64], _symbol: String[32]):
+def __init__(_name:String[64], _symbol:String[32], _decimals:int128):
   self.name = _name
   self.symbol = _symbol
-  self.decimals = 2
+  self.decimals = _decimals
   self.minters[msg.sender] = True
   self.balances[self] = 0
   log Transfer(ZERO_ADDRESS,self,0)
