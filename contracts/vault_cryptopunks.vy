@@ -64,6 +64,7 @@ struct Position:
   paid_interest: uint256
   paid_total: uint256
   time_repaid: uint256
+  time_deposited: uint256
   time_interest: uint256
   time_created: uint256
 
@@ -236,7 +237,7 @@ def open_position(_punk_index:uint256) -> bool:
     paid_total: 0,
     time_repaid: 0,
     time_deposited: 0,
-    time_interest: block.timestamp,
+    time_interest: 0,
     time_created: block.timestamp,
   })
 
@@ -265,9 +266,12 @@ def borrow(_punk_index:uint256,_amount:uint256) -> bool:
   punk_owner: address = self._get_punk_owner(_punk_index)
   assert punk_owner == self, 'punk_not_deposited'
 
-  # update as deposited
-  if self.positions[msg.sender][_punk_index].time_deposited == 0
+  # updated deposited and interest timestamp if they don't exist
+  if self.positions[msg.sender][_punk_index].time_deposited == 0:
     self.positions[msg.sender][_punk_index].time_deposited = block.timestamp
+
+  if self.positions[msg.sender][_punk_index].time_interest == 0:
+    self.positions[msg.sender][_punk_index].time_interest = block.timestamp
 
   # continue with lending logic
   avail_credit: uint256 = self.positions[msg.sender][_punk_index].credit_limit
