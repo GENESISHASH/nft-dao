@@ -24,18 +24,16 @@ def main():
   # deploy dao
   _dao = dao.deploy('DAO',{'from':account},publish_source=publish_source)
 
-  # deploy cryptopunks contract and claim a few punks
+  # deploy cryptopunks contract
   _cryptopunks = cryptopunks.deploy({'from':account},publish_source=publish_source)
 
-  _cryptopunks.getPunk(PUNK_INDEX_FLOOR,{'from':account})
-  _cryptopunks.getPunk(PUNK_INDEX_APE,{'from':account})
-  _cryptopunks.getPunk(PUNK_INDEX_ALIEN,{'from':account})
-
-  print("Cryptobunks balance:",_cryptopunks.balanceOf(account))
-
-  # deploy stablecoin and vault
+  # deploy stablecoin
   _stable_token = stable_token.deploy("Stablecoin","PUSD",0,{'from':account},publish_source=publish_source)
-  _vault = vault_cryptopunks.deploy("Vault",_stable_token,_cryptopunks,{"from":account},publish_source=publish_source)
+
+  # deploy vault
+  _vault = vault_cryptopunks.deploy("Vault",_stable_token,_cryptopunks,_dao,{"from":account},publish_source=publish_source)
+
+  return False
 
   # add the vault and dao as a minter for the stablecoin
   _stable_token.add_minter(_vault,{'from':account})
@@ -43,6 +41,12 @@ def main():
 
   # mint 2m for the dao
   _stable_token.mint(_dao,2000000,{'from':account})
+
+  # claim some punks
+  _cryptopunks.getPunk(PUNK_INDEX_FLOOR,{'from':account})
+  _cryptopunks.getPunk(PUNK_INDEX_APE,{'from':account})
+
+  print("Cryptobunks balance:",_cryptopunks.balanceOf(account))
 
   # open a new position with my ape
   _vault.open_position(PUNK_INDEX_APE,{'from':account})

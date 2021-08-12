@@ -8,6 +8,7 @@ name: public(String[64])
 owner: public(address)
 
 stablecoin_contract: public(address)
+dao_contract: public(address)
 
 apr_percent: public(decimal)
 collateral_percent: public(decimal)
@@ -78,10 +79,11 @@ interface StableCoin:
   def minterTransferFrom(_from:address,_to:address,_value:uint256): nonpayable
 
 @external
-def __init__(_name:String[64], _stablecoin_addr:address):
+def __init__(_name:String[64], _stablecoin_addr:address, _dao_addr:address):
   self.name = _name
   self.owner = msg.sender
   self.stablecoin_contract = _stablecoin_addr
+  self.dao_contract = _dao_addr
 
   self.apr_percent = 0.02
   self.collateral_percent = 0.50

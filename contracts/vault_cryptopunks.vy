@@ -1,18 +1,6 @@
 # @version ^0.2.15
 
-# vault_cryptopunks.vy
-
 from vyper.interfaces import ERC20
-
-name: public(String[64])
-owner: public(address)
-
-stablecoin_contract: public(address)
-cryptopunks_contract: public(address)
-dao_contract: public(address)
-
-apr_percent: public(decimal)
-collateral_percent: public(decimal)
 
 event position_opened:
   owner: address
@@ -46,6 +34,16 @@ event interest_added:
 event punk_value_set:
   type: String[32]
   amount: uint256
+
+name: public(String[64])
+owner: public(address)
+
+stablecoin_contract: public(address)
+cryptopunks_contract: public(address)
+dao_contract: public(address)
+
+apr_percent: public(decimal)
+collateral_percent: public(decimal)
 
 struct Position:
   owner: address
@@ -88,12 +86,13 @@ interface CryptoPunks:
   def punkIndexToAddress(_punk_index:uint256) -> address: nonpayable
 
 @external
-def __init__(_name:String[64],_stablecoin_addr:address,_cryptopunks_addr:address):
+def __init__(_name:String[64],_stablecoin_addr:address,_cryptopunks_addr:address,_dao_addr:address):
   self.name = _name
   self.owner = msg.sender
 
   self.stablecoin_contract = _stablecoin_addr
   self.cryptopunks_contract = _cryptopunks_addr
+  self.dao_contract = _dao_addr
 
   self.apr_percent = 0.02
   self.collateral_percent = 0.50
@@ -182,12 +181,9 @@ def get_punk_owner(_punk_index:uint256) -> address:
   return self._get_punk_owner(_punk_index)
 
 struct PositionPreview:
-  punk_index: uint256
   punk_type: String[32]
   punk_value: uint256
-  apr_percent: decimal
-  collateralization_ratio: decimal
-  total_credit: uint256
+  credit: uint256
 
 @view
 @external
@@ -195,12 +191,9 @@ def preview_position(_punk_index:uint256) -> PositionPreview:
   assert _punk_index < 10000, 'invalid_punk'
 
   return PositionPreview({
-    punk_index: _punk_index,
     punk_type: self._get_punk_type(_punk_index),
     punk_value: self._get_punk_value(_punk_index),
-    apr_percent: self.apr_percent,
-    collateralization_ratio: self.collateral_percent,
-    total_credit: self._get_collateralized_punk_value(_punk_index),
+    credit: self._get_collateralized_punk_value(_punk_index),
   })
 
 @external
