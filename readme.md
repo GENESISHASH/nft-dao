@@ -12,3 +12,10 @@ a nifty collection of well thought out smart contracts
 - stable_token.vy
   - keep track of totalSupply
 
+# notes
+```
+Compiler Version: v0.4.26+commit.4563c3fc
+Optimization Enabled: 1
+Runs: 200
+```
+
