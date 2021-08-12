@@ -1,6 +1,6 @@
 # @version ^0.2.15
 
-# ERC20 token
+# erc20_token.vy
 
 from vyper.interfaces import ERC20
 

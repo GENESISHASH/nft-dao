@@ -1,6 +1,6 @@
 # @version ^0.2.15
 
-# Vault
+# vault_erc20.vy
 
 from vyper.interfaces import ERC20
 

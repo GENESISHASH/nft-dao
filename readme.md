@@ -2,25 +2,13 @@
 a nifty collection of well thought out smart contracts
 
 # @todo
-- deploy Punks clone on Ropsten for testing
-- Vault.vy
-  - add new hybrid hashmap called `positions`
-    - ethereum addresses can each have multiple "positions" open
-  - `deposit()`
-    x - create a position
-    x - change to create credit instead of minting
-    x - credit determined based on the asset being deposited into the vault
-  - `borrow()`
-    x - borrow usd against a position's available credit
-    x - mint stablecoin based on available credit
-  - `repay(int)`
-    - burn an amount of minted stablecoin for a position
-    - can be any amount, doesn't need to be full amount
-  - `heartbeat()`
-    - facilitates liquidations and reassessing position health
-    - implement pricefeed oracle
-    - implement interest accrual logic
-    - calculate health score of all positions
-- DAO.vy
-  - contract accumulates interest and liquidated assets from defaulted positions
+- vault_cryptopunks.vy
+  - get `show_position()` to work (msg.sender should not be required)
+  - get `preview_position()` to work (not sure why it doesn't return atm)
+  - ensure position closings work properly
+  - add interest logic send to dao
+  - add liquidation logic send to dao
+  - add position cleanup for positions opened and no punk deposit made
+- stable_token.vy
+  - keep track of totalSupply
 

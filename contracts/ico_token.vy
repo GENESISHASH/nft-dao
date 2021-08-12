@@ -1,6 +1,6 @@
 # @version ^0.2.15
 
-# Governance
+# ico_token.vy
 
 from vyper.interfaces import ERC20
 

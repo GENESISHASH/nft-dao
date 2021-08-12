@@ -1,6 +1,6 @@
 # @version ^0.2.15
 
-# Cryptopunks Vault
+# vault_cryptopunks.vy
 
 from vyper.interfaces import ERC20
 
@@ -9,9 +9,10 @@ owner: public(address)
 
 stablecoin_contract: public(address)
 cryptopunks_contract: public(address)
+dao_contract: public(address)
 
-apr_percent: decimal
-collateral_percent: decimal
+apr_percent: public(decimal)
+collateral_percent: public(decimal)
 
 event position_opened:
   owner: address
