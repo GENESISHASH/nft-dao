@@ -10,8 +10,8 @@ owner: public(address)
 stablecoin_contract: public(address)
 cryptopunks_contract: public(address)
 
-apr_percent: public(decimal)
-collateral_percent: public(decimal)
+apr_percent: decimal
+collateral_percent: decimal
 
 event position_opened:
   owner: address
@@ -72,7 +72,6 @@ positions: HashMap[address,HashMap[uint256,Position]]
 positions_punks: HashMap[uint256,address]
 
 total_positions: public(uint256)
-total_credit: public(uint256)
 total_minted: public(uint256)
 total_repaid: public(uint256)
 
@@ -99,15 +98,15 @@ def __init__(_name:String[64],_stablecoin_addr:address,_cryptopunks_addr:address
   self.collateral_percent = 0.50
 
   # default values for punk types
-  self.punk_values['floor'] = 100
-  self.punk_values['ape'] = 500
-  self.punk_values['alien'] = 1000
+  self.punk_values['floor'] = 100000
+  self.punk_values['ape'] = 5000000
+  self.punk_values['alien'] = 10000000
 
-  # define apes
+  # define aliens
   for index in [635,2890,3100,3443,5822,5905,6089,7523,7804]:
     self.punk_dictionary[index] = 'alien'
 
-  # define aliens
+  # define apes
   for index in [372,1021,2140,2243,2386,2460,2491,2711,2924,4156,4178,4464,5217,5314,5577,5795,6145,6915,6965,7191,8219,8498,9265,9280]:
     self.punk_dictionary[index] = 'ape'
 
@@ -157,11 +156,6 @@ def _get_collateralized_punk_value(_punk_index:uint256) -> uint256:
 
   return colat_value
 
-@view
-@external
-def get_collateralized_punk_value(_punk_index:uint256) -> uint256:
-  return self._get_collateralized_punk_value(_punk_index)
-
 @internal
 def add_interest(_address:address,_punk_index:uint256) -> bool:
   interest: uint256 = (self.positions[_address][_punk_index].debt_principal)
@@ -194,6 +188,7 @@ struct PositionPreview:
   collateralization_ratio: decimal
   total_credit: uint256
 
+@view
 @external
 def preview_position(_punk_index:uint256) -> PositionPreview:
   assert _punk_index < 10000, 'invalid_punk'
@@ -209,8 +204,9 @@ def preview_position(_punk_index:uint256) -> PositionPreview:
 
 @external
 def open_position(_punk_index:uint256) -> bool:
-  punk_owner: address = self._get_punk_owner(_punk_index)
+  assert _punk_index < 10000, 'invalid_punk'
 
+  punk_owner: address = self._get_punk_owner(_punk_index)
   assert punk_owner == msg.sender, 'punk_not_owned'
   assert self.positions[msg.sender][_punk_index].time_created == 0, 'position_already_exists'
 
@@ -242,19 +238,15 @@ def open_position(_punk_index:uint256) -> bool:
   })
 
   self.positions_punks[_punk_index] = msg.sender
+  self.total_positions += 1
 
   log position_opened(msg.sender,_punk_index,colat_value)
 
   return True
 
+@view
 @external
 def show_position(_punk_index:uint256) -> Position:
-  assert msg.sender == self.positions[msg.sender][_punk_index].owner, 'unauthorized'
-  assert self.positions[msg.sender][_punk_index].time_created > 0, 'position_not_found'
-
-  punk_owner: address = self._get_punk_owner(_punk_index)
-  assert punk_owner == self, 'punk_not_deposited'
-
   return self.positions[msg.sender][_punk_index]
 
 @external
