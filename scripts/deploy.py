@@ -62,6 +62,9 @@ def main():
 
   print('Position:',_vault.show_position(PUNK_INDEX_FLOOR))
 
+  # add some interest to this thing
+  for i in range(5): _vault.tick()
+
   # make a payment against my floorpunk
   _vault.repay(PUNK_INDEX_FLOOR,(500 * 10**18),{'from':account})
   _vault.repay(PUNK_INDEX_FLOOR,(8500 * 10**18),{'from':account})
@@ -70,8 +73,6 @@ def main():
 
   # close my position
   _vault.close_position(PUNK_INDEX_FLOOR,{'from':account})
-
-  for i in range(10): _vault.tick()
 
   #####################################
 
