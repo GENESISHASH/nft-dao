@@ -16,6 +16,12 @@ event Transfer:
   receiver: indexed(address)
   value: uint256
 
+event MinterAdded:
+  _address: indexed(address)
+
+event MinterRemoved:
+  _address: indexed(address)
+
 name: public(String[64])
 symbol: public(String[32])
 decimals: public(int128)
@@ -27,12 +33,14 @@ totalSupply: public(uint256)
 minters: public(HashMap[address,bool])
 
 @external
-def __init__(_name:String[64], _symbol:String[32], _decimals:int128):
+def __init__(_name:String[64], _symbol:String[32]):
+  self.decimals = 18
   self.name = _name
   self.symbol = _symbol
-  self.decimals = _decimals
+
   self.minters[msg.sender] = True
   self.balances[self] = 0
+
   log Transfer(ZERO_ADDRESS,self,0)
 
 @view
@@ -89,25 +97,31 @@ def mint(_to: address, _value: uint256) -> bool:
   return True
 
 @external
-def burn_from(_to: address, _value: uint256) -> bool:
+def burnFrom(_from: address, _value: uint256) -> bool:
   assert self.minters[msg.sender], 'Unauthorized'
 
   self.totalSupply -= _value
-  self.balances[_to] -= _value
+  self.balances[_from] -= _value
 
-  log Transfer(_to, ZERO_ADDRESS, _value)
+  log Transfer(_from, ZERO_ADDRESS, _value)
 
   return True
 
 @external
-def add_minter(_addr: address) -> bool:
+def addMinter(_addr: address) -> bool:
   assert self.minters[msg.sender], 'Unauthorized'
   self.minters[_addr] = True
+
+  log MinterAdded(_addr)
+
   return True
 
 @external
-def del_minter(_addr: address) -> bool:
+def removeMinter(_addr: address) -> bool:
   assert self.minters[msg.sender], 'Unauthorized'
   self.minters[_addr] = False
+
+  log MinterRemoved(_addr)
+
   return True
 

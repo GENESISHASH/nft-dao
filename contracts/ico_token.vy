@@ -18,20 +18,19 @@ event Transfer:
 
 name: public(String[64])
 symbol: public(String[32])
-decimals: public(uint256)
+decimals: public(int128)
 totalSupply: public(uint256)
 balances: HashMap[address, uint256]
 allowances: HashMap[address, HashMap[address, uint256]]
 
 @external
 def __init__(_name:String[64],_symbol:String[32],_supply:uint256):
-  self.decimals = 4
-  init_supply: uint256 = _supply * 10 ** self.decimals
-
+  self.decimals = 18
   self.name = _name
   self.symbol = _symbol
-  self.totalSupply = init_supply
+  self.totalSupply = (_supply * 10**18)
   self.balances[self] = self.totalSupply
+
   log Transfer(ZERO_ADDRESS,self,self.totalSupply)
 
 @view

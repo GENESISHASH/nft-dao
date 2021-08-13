@@ -14,8 +14,8 @@ from brownie import (
 
 # example punks
 PUNK_INDEX_FLOOR = 2
-PUNK_INDEX_APE = 635
-PUNK_INDEX_ALIEN = 372
+PUNK_INDEX_APE = 372
+PUNK_INDEX_ALIEN = 635
 
 def main():
   publish_source = False
@@ -28,19 +28,19 @@ def main():
   _cryptopunks = cryptopunks.deploy({'from':account},publish_source=publish_source)
 
   # deploy stablecoin
-  _stable_token = stable_token.deploy("Stablecoin","PUSD",0,{'from':account},publish_source=publish_source)
+  _stable_token = stable_token.deploy("Stablecoin","PUSD",{'from':account},publish_source=publish_source)
 
   # deploy vault
   _vault = vault_cryptopunks.deploy("Vault",_stable_token,_cryptopunks,_dao,{"from":account},publish_source=publish_source)
 
-  return False
-
   # add the vault and dao as a minter for the stablecoin
-  _stable_token.add_minter(_vault,{'from':account})
-  _stable_token.add_minter(_dao,{'from':account})
+  _stable_token.addMinter(_vault,{'from':account})
+  _stable_token.addMinter(_dao,{'from':account})
 
   # mint 2m for the dao
-  _stable_token.mint(_dao,2000000,{'from':account})
+  _stable_token.mint(_dao,(2000000 * 10**18),{'from':account})
+
+  print("DAO stablecoin balance:",_stable_token.balanceOf(_dao))
 
   # claim some punks
   _cryptopunks.getPunk(PUNK_INDEX_FLOOR,{'from':account})
@@ -49,19 +49,29 @@ def main():
   print("Cryptobunks balance:",_cryptopunks.balanceOf(account))
 
   # open a new position with my ape
-  _vault.open_position(PUNK_INDEX_APE,{'from':account})
+  _vault.open_position(PUNK_INDEX_FLOOR,{'from':account})
 
   # ..ui waits for deposit before borrow() is able to be called
   # ui can actually call _vault.get_punk_owner() until it's the vault address
 
   # deposit the punk into the vault (user does this via web3)
-  _cryptopunks.transferPunk(_vault,PUNK_INDEX_APE,{'from':account})
+  _cryptopunks.transferPunk(_vault,PUNK_INDEX_FLOOR,{'from':account})
 
   # borrow some stablecoin against it now that we have it in vault
-  _vault.borrow(PUNK_INDEX_APE,9000,{'from':account})
+  _vault.borrow(PUNK_INDEX_FLOOR,(9000 * 10**18),{'from':account})
 
-  # make a payment against my ape loan
-  _vault.repay(PUNK_INDEX_APE,500,{'from':account})
+  print('Position:',_vault.show_position(PUNK_INDEX_FLOOR))
+
+  # make a payment against my floorpunk
+  _vault.repay(PUNK_INDEX_FLOOR,(500 * 10**18),{'from':account})
+  _vault.repay(PUNK_INDEX_FLOOR,(8500 * 10**18),{'from':account})
+
+  print('Position:',_vault.show_position(PUNK_INDEX_FLOOR))
+
+  # close my position
+  _vault.close_position(PUNK_INDEX_FLOOR,{'from':account})
+
+  for i in range(10): _vault.tick()
 
   #####################################
 
