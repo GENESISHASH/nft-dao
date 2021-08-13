@@ -1,5 +1,7 @@
 # @version ^0.2.15
 
+# vault_erc20.vy
+
 from vyper.interfaces import ERC20
 
 event position_opened:
