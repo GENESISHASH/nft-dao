@@ -11,11 +11,11 @@ balances: HashMap[address,uint256]
 
 @external
 def __init__(_name:String[64]):
-    self.name = _name
-    self.owner = msg.sender
+  self.name = _name
+  self.owner = msg.sender
 
 @view
 @external
 def balanceOf(_token_addr:address) -> uint256:
-    return self.balances[_token_addr]
+  return self.balances[_token_addr]
 
