@@ -16,6 +16,10 @@ event Transfer:
   receiver: indexed(address)
   value: uint256
 
+event TokensBurned:
+  _address: indexed(address)
+  _value: uint256
+
 event MinterAdded:
   _address: indexed(address)
 
@@ -103,6 +107,7 @@ def burnFrom(_from: address, _value: uint256) -> bool:
   self.totalSupply -= _value
   self.balances[_from] -= _value
 
+  log TokensBurned(_from,_value)
   log Transfer(_from, ZERO_ADDRESS, _value)
 
   return True
