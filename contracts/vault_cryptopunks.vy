@@ -59,6 +59,8 @@ apr_rate: public(uint256)
 colaterallization_rate: public(uint256)
 
 SECS_MINUTE: constant(uint256) = 60
+SECS_15M: constant(uint256) = 60 * 15
+SECS_30M: constant(uint256) = 60 * 30
 SECS_HOUR: constant(uint256) = 3600
 SECS_DAY: constant(uint256) = 86400
 SECS_WEEK: constant(uint256) = 86400 * 7
