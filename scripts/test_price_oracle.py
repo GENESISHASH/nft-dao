@@ -19,6 +19,7 @@ def main():
   #_oracle.update()
 
   print('eth_usd',_oracle.eth_usd())
+  print('eth_usd',_oracle.eth_usd_18())
   print('last_update_time',_oracle.last_update_time())
   print('last_update_remote',_oracle.last_update_remote())
 

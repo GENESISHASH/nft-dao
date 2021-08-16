@@ -58,6 +58,7 @@ oracle_contract: public(address)
 
 apr_rate: public(uint256)
 colaterallization_rate: public(uint256)
+compounding_interval_secs: public(uint256)
 
 SECS_MINUTE: constant(uint256) = 60
 SECS_15M: constant(uint256) = 60 * 15
@@ -76,6 +77,7 @@ struct Position:
   asset_amount: uint256
   asset_index: uint256
   asset_value: uint256
+  asset_value_eth: uint256
   credit_limit: uint256
   credit_minted: uint256
   debt_principal: uint256
@@ -97,6 +99,7 @@ total_repaid: public(uint256)
 total_liquidated: public(uint256)
 
 punk_values: HashMap[String[32],uint256]
+punk_values_usd: HashMap[String[32],uint256]
 punk_dictionary: HashMap[uint256,String[32]]
 
 tick_i: uint256
@@ -107,6 +110,13 @@ interface StableCoin:
   def transfer(_to:address,_value:uint256): nonpayable
   def minterTransferFrom(_from:address,_to:address,_value:uint256): nonpayable
   def burnFrom(_from: address,_value:uint256): nonpayable
+
+interface Oracle:
+  def update() -> bool: nonpayable
+  def eth_usd() -> int128: view
+  def eth_usd_18() -> uint256: view
+  def last_update_time() -> uint256: view
+  def last_update_remote() -> bool: view
 
 interface CryptoPunks:
   def transferPunk(_to:address,_punk_index:uint256): nonpayable
@@ -128,19 +138,38 @@ def __init__(_name:String[64],_stablecoin_addr:address,_cryptopunks_addr:address
 
   self.apr_rate = 2
   self.colaterallization_rate = 50
+  self.compounding_interval_secs = SECS_15M
 
-  # default values for punk types
-  self.punk_values['floor'] = 100000 * 10**18
-  self.punk_values['ape'] = 500000 * 10**18
-  self.punk_values['alien'] = 1000000 * 10**18
+  # default values (in eth) for punk types
+  self.punk_values['floor'] = 50 * 10**18
+  self.punk_values['ape'] = 2000 * 10**18
+  self.punk_values['alien'] = 4000 * 10**18
 
-  # define aliens
+  # update price oracle
+  Oracle(self.oracle_contract).update()
+  eth_usd_18: uint256 = Oracle(self.oracle_contract).eth_usd_18()
+
+  self.punk_values_usd['floor'] = self.punk_values['floor'] * eth_usd_18
+  self.punk_values_usd['ape'] = self.punk_values['ape'] * eth_usd_18
+  self.punk_values_usd['alien'] = self.punk_values['alien'] * eth_usd_18
+
   for index in [635,2890,3100,3443,5822,5905,6089,7523,7804]:
     self.punk_dictionary[index] = 'alien'
 
   # define apes
   for index in [372,1021,2140,2243,2386,2460,2491,2711,2924,4156,4178,4464,5217,5314,5577,5795,6145,6915,6965,7191,8219,8498,9265,9280]:
     self.punk_dictionary[index] = 'ape'
+
+@internal
+def _update_oracle_pricing() -> bool:
+  Oracle(self.oracle_contract).update()
+  eth_usd_18: uint256 = Oracle(self.oracle_contract).eth_usd_18()
+
+  self.punk_values_usd['floor'] = self.punk_values['floor'] * eth_usd_18
+  self.punk_values_usd['ape'] = self.punk_values['ape'] * eth_usd_18
+  self.punk_values_usd['alien'] = self.punk_values['alien'] * eth_usd_18
+
+  return True
 
 @external
 def set_tick_chunk_size(_number:uint256) -> bool:
@@ -161,13 +190,20 @@ def set_colaterallization_rate_rate(_number:uint256) -> bool:
   return True
 
 @external
+def set_compounding_interval_secs(_number:uint256) -> bool:
+  assert msg.sender == self.owner, 'unauthorized'
+  self.compounding_interval_secs = _number
+  return True
+
+@external
 def set_punk_value(_type:String[32],_amount:uint256) -> bool:
   assert msg.sender == self.owner, 'unauthorized'
   assert self.punk_values[_type] > 0, 'invalid_punk_type'
 
   self.punk_values[_type] = _amount
-
   log punk_value_set(_type,_amount)
+
+  self._update_oracle_pricing()
 
   return True
 
@@ -184,6 +220,12 @@ def _get_punk_type(_punk_index:uint256) -> String[32]:
 def _get_punk_value(_punk_index:uint256) -> uint256:
   assert _punk_index < 10000, 'invalid_punk'
   return self.punk_values[self._get_punk_type(_punk_index)]
+
+@view
+@internal
+def _get_punk_value_usd(_punk_index:uint256) -> uint256:
+  assert _punk_index < 10000, 'invalid_punk'
+  return self.punk_values_usd[self._get_punk_type(_punk_index)]
 
 @internal
 def _get_punk_owner(_punk_index:uint256) -> address:
@@ -217,6 +259,16 @@ def _get_collateralized_punk_value(_punk_index:uint256) -> uint256:
 
   return colat_value
 
+@view
+@internal
+def _get_collateralized_punk_value_usd(_punk_index:uint256) -> uint256:
+  assert _punk_index < 10000, 'invalid_punk'
+
+  asset_value: uint256 = self._get_punk_value_usd(_punk_index)
+  colat_value: uint256 = ((asset_value * self.colaterallization_rate) / 100)
+
+  return colat_value
+
 @external
 def get_punk_owner(_punk_index:uint256) -> address:
   return self._get_punk_owner(_punk_index)
@@ -237,10 +289,10 @@ def preview_position(_punk_index:uint256) -> PositionPreview:
   preview: PositionPreview = PositionPreview({
     punk_index: _punk_index,
     punk_type: self._get_punk_type(_punk_index),
-    punk_value: self._get_punk_value(_punk_index),
+    punk_value: self._get_punk_value_usd(_punk_index),
     apr_rate: self.apr_rate,
     colaterallization_rate: self.colaterallization_rate,
-    credit_limit: self._get_collateralized_punk_value(_punk_index),
+    credit_limit: self._get_collateralized_punk_value_usd(_punk_index),
   })
 
   return preview
@@ -249,12 +301,15 @@ def preview_position(_punk_index:uint256) -> PositionPreview:
 def open_position(_punk_index:uint256) -> bool:
   assert _punk_index < 10000, 'invalid_punk'
 
+  self._update_oracle_pricing()
+
   punk_owner: address = self._get_punk_owner(_punk_index)
   assert punk_owner == msg.sender, 'punk_not_owned'
   assert self.positions[msg.sender][_punk_index].time_created == 0, 'position_already_exists'
 
-  asset_value: uint256 = self._get_punk_value(_punk_index)
-  colat_value: uint256 = self._get_collateralized_punk_value(_punk_index)
+  asset_value_eth: uint256 = self._get_punk_value_usd(_punk_index)
+  asset_value: uint256 = self._get_punk_value_usd(_punk_index)
+  colat_value: uint256 = self._get_collateralized_punk_value_usd(_punk_index)
 
   # create position
   self.positions[msg.sender][_punk_index] = Position({
@@ -266,6 +321,7 @@ def open_position(_punk_index:uint256) -> bool:
     asset_amount: 1,
     asset_index: _punk_index,
     asset_value: asset_value,
+    asset_value_eth: asset_value_eth,
     credit_limit: colat_value,
     credit_minted: 0,
     debt_principal: 0,
@@ -427,7 +483,7 @@ def _attempt_add_interest(_address:address,_punk_index:uint256) -> uint256:
 
   time_difference_secs: uint256 = block.timestamp - last_interest
 
-  if time_difference_secs > 0:
+  if time_difference_secs > self.compounding_interval_secs:
     new_interest: uint256 = time_difference_secs * interest_per_second
 
     self.positions[_address][_punk_index].debt_interest += new_interest
@@ -446,6 +502,8 @@ def _attempt_liquidate(_address:address,punk_index:uint256) -> bool:
 # process a chunk of positions
 @external
 def tick() -> uint256:
+  self._update_oracle_pricing()
+
   if self.tick_i > 9999: self.tick_i = 0
 
   loops: uint256 = 0

@@ -24,6 +24,8 @@ def main():
   publish_source = False
   account = accounts.load('devel')
 
+  print('Deploying on network',NETWORK)
+
   # deploy price oracle
   _price_oracle = price_oracle.deploy('Oracle',{'from':account},publish_source=publish_source)
 
@@ -59,6 +61,9 @@ def main():
   _cryptopunks.getPunk(PUNK_INDEX_APE,{'from':account})
 
   print("Cryptobunks balance:",_cryptopunks.balanceOf(account))
+
+  # preview position
+  print('Preview position',_vault.preview_position(PUNK_INDEX_FLOOR,{'from':account}))
 
   # open a new position with my ape
   _vault.open_position(PUNK_INDEX_FLOOR,{'from':account})
