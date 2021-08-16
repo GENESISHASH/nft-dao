@@ -270,12 +270,6 @@ def open_position(_punk_index:uint256) -> bool:
 
   return True
 
-@external
-def check_punk_deposited(_punk_index:uint256) -> bool:
-  if self._get_punk_owner(_punk_index) == self:
-    return True
-  return False
-
 @view
 @external
 def show_position(_punk_index:uint256) -> Position:

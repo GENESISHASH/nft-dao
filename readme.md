@@ -2,9 +2,12 @@
 a nifty collection of well thought out smart contracts
 
 # @todo
-- vault_cryptopunks.vy
-  - add liquidation logic
-  - add position cleanup for positions opened and no punk deposit made
+[ ] - add minimum time interval to interest adding logic
+[ ] - add liquidation logic
+[ ] - implement chainlink pricefeed oracle
+[ ] - add vault burn functionality for principal payments
+[ ] - add setters and owner to manually set apr and collateralization rate
+[ ] - add position cleanup for positions opened and no punk deposit made
 
 # notes
 ```

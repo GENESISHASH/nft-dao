@@ -7,9 +7,8 @@ from brownie import (
     ico_token,
     erc20_token,
     stable_token,
-    vault_erc20,
     vault_cryptopunks,
-    dao
+    dao,
 )
 
 # example punks
