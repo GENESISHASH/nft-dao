@@ -54,6 +54,7 @@ decimals: public(int128)
 stablecoin_contract: public(address)
 cryptopunks_contract: public(address)
 dao_contract: public(address)
+oracle_contract: public(address)
 
 apr_rate: public(uint256)
 colaterallization_rate: public(uint256)
@@ -112,7 +113,7 @@ interface CryptoPunks:
   def punkIndexToAddress(_punk_index:uint256) -> address: nonpayable
 
 @external
-def __init__(_name:String[64],_stablecoin_addr:address,_cryptopunks_addr:address,_dao_addr:address):
+def __init__(_name:String[64],_stablecoin_addr:address,_cryptopunks_addr:address,_dao_addr:address,_oracle_addr:address):
   self.tick_i = 0
   self.tick_chunk_size = 500
 
@@ -123,6 +124,7 @@ def __init__(_name:String[64],_stablecoin_addr:address,_cryptopunks_addr:address
   self.stablecoin_contract = _stablecoin_addr
   self.cryptopunks_contract = _cryptopunks_addr
   self.dao_contract = _dao_addr
+  self.oracle_contract = _oracle_addr
 
   self.apr_rate = 2
   self.colaterallization_rate = 50
@@ -144,6 +146,18 @@ def __init__(_name:String[64],_stablecoin_addr:address,_cryptopunks_addr:address
 def set_tick_chunk_size(_number:uint256) -> bool:
   assert msg.sender == self.owner, 'unauthorized'
   self.tick_chunk_size = _number
+  return True
+
+@external
+def set_apr_rate(_number:uint256) -> bool:
+  assert msg.sender == self.owner, 'unauthorized'
+  self.apr_rate = _number
+  return True
+
+@external
+def set_colaterallization_rate_rate(_number:uint256) -> bool:
+  assert msg.sender == self.owner, 'unauthorized'
+  self.colaterallization_rate = _number
   return True
 
 @external

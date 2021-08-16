@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import os
+
 from brownie import (
     accounts,
     cryptopunks,
@@ -9,7 +10,10 @@ from brownie import (
     stable_token,
     vault_cryptopunks,
     dao,
+    price_oracle,
 )
+
+NETWORK = os.environ.get('NETWORK')
 
 # example punks
 PUNK_INDEX_FLOOR = 2
@@ -19,6 +23,15 @@ PUNK_INDEX_ALIEN = 635
 def main():
   publish_source = False
   account = accounts.load('devel')
+
+  # deploy price oracle
+  _price_oracle = price_oracle.deploy('Oracle',{'from':account},publish_source=publish_source)
+
+  # set chainlink address in oracle
+  if NETWORK == 'kovan':
+    _price_oracle.set_chainlink_contract("0x9326BFA02ADD2366b30bacB125260Af641031331")
+  if NETWORK == 'mainnet':
+    _price_oracle.set_chainlink_contract("0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419")
 
   # deploy dao
   _dao = dao.deploy('DAO',{'from':account},publish_source=publish_source)
@@ -30,7 +43,7 @@ def main():
   _stable_token = stable_token.deploy("Stablecoin","PUSD",{'from':account},publish_source=publish_source)
 
   # deploy vault
-  _vault = vault_cryptopunks.deploy("Vault",_stable_token,_cryptopunks,_dao,{"from":account},publish_source=publish_source)
+  _vault = vault_cryptopunks.deploy("Vault",_stable_token,_cryptopunks,_dao,_price_oracle,{"from":account},publish_source=publish_source)
 
   # add the vault and dao as a minter for the stablecoin
   _stable_token.addMinter(_vault,{'from':account})
@@ -76,10 +89,13 @@ def main():
   #####################################
 
   # output details
-  prefix = 'https://etherscan.io/address/'
-  if os.environ.get('NETWORK') == 'kovan':
+  prefix = ''
+
+  if NETWORK == 'mainnet':
+    prefix = 'https://etherscan.io/address/'
+  if NETWORK == 'kovan':
     prefix = 'https://kovan.etherscan.io/address/'
-  if os.environ.get('NETWORK') ==  'ropsten':
+  if NETWORK == 'ropsten':
     prefix = 'https://ropsten.etherscan.io/address/'
 
   print("\n\n")
@@ -89,6 +105,7 @@ def main():
   print("_vault", prefix + str(_vault))
   print("_stable_token", prefix + str(_stable_token))
   print("_cryptopunks", prefix + str(_cryptopunks))
+  print("_price_oracle", prefix + str(_price_oracle))
 
   print("\n\n")
 
