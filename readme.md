@@ -6,7 +6,7 @@ a nifty collection of well thought out smart contracts
 [x] - implement chainlink pricefeed oracle
 [x] - add vault burn functionality for principal payments
 [x] - add setters and owner to manually set apr and collateralization rate
-[ ] - fix usd calculations
+[x] - fix usd calculations
 [ ] - add position cleanup for positions opened and no punk deposit made
 [ ] - add liquidation logic
 
