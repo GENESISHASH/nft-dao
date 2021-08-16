@@ -149,9 +149,9 @@ def __init__(_name:String[64],_stablecoin_addr:address,_cryptopunks_addr:address
   Oracle(self.oracle_contract).update()
   eth_usd_18: uint256 = Oracle(self.oracle_contract).eth_usd_18()
 
-  self.punk_values_usd['floor'] = self.punk_values['floor'] * eth_usd_18
-  self.punk_values_usd['ape'] = self.punk_values['ape'] * eth_usd_18
-  self.punk_values_usd['alien'] = self.punk_values['alien'] * eth_usd_18
+  self.punk_values_usd['floor'] = (self.punk_values['floor'] * eth_usd_18)/(10**18)
+  self.punk_values_usd['ape'] = (self.punk_values['ape'] * eth_usd_18)/(10**18)
+  self.punk_values_usd['alien'] = (self.punk_values['alien'] * eth_usd_18)/(10**18)
 
   for index in [635,2890,3100,3443,5822,5905,6089,7523,7804]:
     self.punk_dictionary[index] = 'alien'
@@ -165,11 +165,15 @@ def _update_oracle_pricing() -> bool:
   Oracle(self.oracle_contract).update()
   eth_usd_18: uint256 = Oracle(self.oracle_contract).eth_usd_18()
 
-  self.punk_values_usd['floor'] = self.punk_values['floor'] * eth_usd_18
-  self.punk_values_usd['ape'] = self.punk_values['ape'] * eth_usd_18
-  self.punk_values_usd['alien'] = self.punk_values['alien'] * eth_usd_18
+  self.punk_values_usd['floor'] = (self.punk_values['floor'] * eth_usd_18)/(10**18)
+  self.punk_values_usd['ape'] = (self.punk_values['ape'] * eth_usd_18)/(10**18)
+  self.punk_values_usd['alien'] = (self.punk_values['alien'] * eth_usd_18)/(10**18)
 
   return True
+
+@external
+def update_oracle_pricing() -> bool:
+  return self._update_oracle_pricing()
 
 @external
 def set_tick_chunk_size(_number:uint256) -> bool:
@@ -196,12 +200,12 @@ def set_compounding_interval_secs(_number:uint256) -> bool:
   return True
 
 @external
-def set_punk_value(_type:String[32],_amount:uint256) -> bool:
+def set_punk_value(_type:String[32],_amount_eth:uint256) -> bool:
   assert msg.sender == self.owner, 'unauthorized'
   assert self.punk_values[_type] > 0, 'invalid_punk_type'
 
-  self.punk_values[_type] = _amount
-  log punk_value_set(_type,_amount)
+  self.punk_values[_type] = _amount_eth
+  log punk_value_set(_type,_amount_eth)
 
   self._update_oracle_pricing()
 
