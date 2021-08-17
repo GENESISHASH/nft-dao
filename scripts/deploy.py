@@ -3,14 +3,14 @@
 import os
 
 from brownie import (
-    accounts,
-    cryptopunks,
-    ico_token,
-    erc20_token,
-    stable_token,
-    vault_cryptopunks,
-    dao,
-    price_oracle,
+  accounts,
+  cryptopunks,
+  ico_token,
+  erc20_token,
+  stable_token,
+  vault_cryptopunks,
+  dao,
+  price_oracle,
 )
 
 NETWORK = os.environ.get('NETWORK')
@@ -75,7 +75,7 @@ def main():
   _cryptopunks.transferPunk(_vault,PUNK_INDEX_FLOOR,{'from':account})
 
   # borrow some stablecoin against it now that we have it in vault
-  _vault.borrow(PUNK_INDEX_FLOOR,(100000 * 10**18),{'from':account})
+  _vault.borrow(PUNK_INDEX_FLOOR,(50000 * 10**18),{'from':account})
 
   print('Position:',_vault.show_position(PUNK_INDEX_FLOOR))
 

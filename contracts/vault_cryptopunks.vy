@@ -138,7 +138,7 @@ def __init__(_name:String[64],_stablecoin_addr:address,_cryptopunks_addr:address
 
   self.apr_rate = 2
   self.colaterallization_rate = 50
-  self.compounding_interval_secs = SECS_15M
+  self.compounding_interval_secs = SECS_HOUR
 
   # default values (in eth) for punk types
   self.punk_values['floor'] = 50 * 10**18
