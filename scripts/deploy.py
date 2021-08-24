@@ -51,6 +51,8 @@ def main():
   _stable_token.addMinter(_vault,{'from':account})
   _stable_token.addMinter(_dao,{'from':account})
 
+  # @todo: revoke ownership or remove minter from stabletoken
+
   # mint 2m for the dao
   _stable_token.mint(_dao,(2000000 * 10**18),{'from':account})
 
@@ -83,8 +85,8 @@ def main():
   for i in range(5): _vault.tick()
 
   # make a payment against my floorpunk
-  _vault.repay(PUNK_INDEX_FLOOR,(500 * 10**18),{'from':account})
-  _vault.repay(PUNK_INDEX_FLOOR,(8500 * 10**18),{'from':account})
+  _vault.repay(PUNK_INDEX_FLOOR,(25000 * 10**18),{'from':account})
+  _vault.repay(PUNK_INDEX_FLOOR,(25000 * 10**18),{'from':account})
 
   print('Position:',_vault.show_position(PUNK_INDEX_FLOOR))
 

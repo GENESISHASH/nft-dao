@@ -9,6 +9,9 @@ a nifty collection of well thought out smart contracts
 [x] - fix usd calculations
 [ ] - add position cleanup for positions opened and no punk deposit made
 [ ] - add liquidation logic
+[ ] - add ability for dao to open position within the vault using stablecoin
+[ ] - vault should have debt limit
+  - changable by owners
 
 # notes
 ```

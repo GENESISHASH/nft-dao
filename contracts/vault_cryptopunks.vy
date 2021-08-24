@@ -153,6 +153,7 @@ def __init__(_name:String[64],_stablecoin_addr:address,_cryptopunks_addr:address
   self.punk_values_usd['ape'] = (self.punk_values['ape'] * eth_usd_18)/(10**18)
   self.punk_values_usd['alien'] = (self.punk_values['alien'] * eth_usd_18)/(10**18)
 
+  # define aliens
   for index in [635,2890,3100,3443,5822,5905,6089,7523,7804]:
     self.punk_dictionary[index] = 'alien'
 
@@ -188,7 +189,7 @@ def set_apr_rate(_number:uint256) -> bool:
   return True
 
 @external
-def set_colaterallization_rate_rate(_number:uint256) -> bool:
+def set_colaterallization_rate(_number:uint256) -> bool:
   assert msg.sender == self.owner, 'unauthorized'
   self.colaterallization_rate = _number
   return True
