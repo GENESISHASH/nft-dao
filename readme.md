@@ -14,7 +14,7 @@ a nifty collection of well thought out smart contracts
   - initially gov wallet needs to approve liquidations of any position
     - admin web3 interface allows for execution liquidations manually
       - interface will show any position flagged for liquidation, age and healthscore
-      - allow option to run liquidat() on it in a single click
+      - allow option to run liquidate() on it in a single click
   - total vault debt on liquidation is recalculated upon each successful liquidation
     - burn outstanding pusd value of position (-vault.total_debt)
     - minus updated punk type value as defined by chainlink (-vault.total_debt)
@@ -23,6 +23,13 @@ a nifty collection of well thought out smart contracts
 [ ] - vault needs to have initial debt limit in pusd
   - function to change this value by gov wallet
   - if debt limit exceeded a new position's pusd value, opening that new position will fail temporarily
+
+## @questions
+- what happens if the user has transferred their PUSD into another coin
+  - we can't burn what they have left, we're fine just taking the colatteral in that case?
+  - liquidation should function like this:
+    - colatteral goes to the dao
+    - any pusd they control should be burned
 
 # notes
 ```
