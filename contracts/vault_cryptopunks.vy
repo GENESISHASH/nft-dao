@@ -56,6 +56,8 @@ cryptopunks_contract: public(address)
 dao_contract: public(address)
 oracle_contract: public(address)
 
+time_last_oracle_update: public(uint256)
+
 apr_rate: public(uint256)
 colaterallization_rate: public(uint256)
 compounding_interval_secs: public(uint256)
@@ -72,6 +74,7 @@ struct Position:
   owner: address
   repaid: bool
   liquidated: bool
+  liquidation_flagged: bool
   asset_type: String[32]
   asset_token: address
   asset_amount: uint256
@@ -174,7 +177,9 @@ def _update_oracle_pricing() -> bool:
 
 @external
 def update_oracle_pricing() -> bool:
-  return self._update_oracle_pricing()
+  self.time_last_oracle_update = block.timestamp
+  self._update_oracle_pricing()
+  return True
 
 @external
 def set_tick_chunk_size(_number:uint256) -> bool:
@@ -309,6 +314,7 @@ def open_position(_punk_index:uint256) -> bool:
   self._update_oracle_pricing()
 
   punk_owner: address = self._get_punk_owner(_punk_index)
+
   assert punk_owner == msg.sender, 'punk_not_owned'
   assert self.positions[msg.sender][_punk_index].time_created == 0, 'position_already_exists'
 
@@ -321,6 +327,7 @@ def open_position(_punk_index:uint256) -> bool:
     owner: msg.sender,
     repaid: False,
     liquidated: False,
+    liquidation_flagged: False,
     asset_type: 'PUNK',
     asset_token: self.cryptopunks_contract,
     asset_amount: 1,
@@ -500,8 +507,23 @@ def _attempt_add_interest(_address:address,_punk_index:uint256) -> uint256:
 
   return 0
 
+# update a position's health score
+@internal
+def _update_position_health_score(_address:address,punk_index:uint256) -> uint256:
+
+  # @todo:
+  # - calculate position health score
+  # - if health score < threshold then mark position as {eligible_for_liquidation:true}
+
+  return 0
+
+# attempt to add liquidation flag to a position
 @internal
 def _attempt_liquidate(_address:address,punk_index:uint256) -> bool:
+  return False
+
+@internal
+def _liquidate(_address:address,punk_index:uint256) -> bool:
   return False
 
 # process a chunk of positions
@@ -533,6 +555,9 @@ def tick() -> uint256:
 
     # add interest
     self._attempt_add_interest(_address,_punk_index)
+
+    # update health score after interest was added
+    self._update_position_health_score(_address,_punk_index)
 
     # attempt liquidation
     self._attempt_liquidate(_address,_punk_index)
