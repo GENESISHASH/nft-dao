@@ -117,6 +117,10 @@ def main():
   print('Position after repayment:')
   print_json(_vault.show_position(PUNK_INDEX_APE).dict())
 
+  # liquidate the position
+  print('Liquidating the position:')
+  _vault.liquidate(PUNK_INDEX_APE,{'from':account})
+
   # status
   print('Vault status:')
   print_json(_vault.show_status().dict())
