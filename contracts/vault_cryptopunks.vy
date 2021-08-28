@@ -728,9 +728,13 @@ def _attempt_liquidate(_address:address,_punk_index:uint256,manual:bool=False,fo
 
 @external
 @nonreentrant('lock')
-def liquidate(_address:address,_punk_index:uint256):
+def liquidate(_punk_index:uint256):
   assert msg.sender == self.owner
-  self._attempt_liquidate(_address,_punk_index,True,True)
+
+  pos_owner: address = self.positions_punks[_punk_index]
+
+  # force liquidation
+  self._attempt_liquidate(pos_owner,_punk_index,True,True)
 
 # process a chunk of positions
 @external
