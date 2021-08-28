@@ -81,6 +81,10 @@ event apr_rate_changed:
 event automatic_liquidation_changed:
   value: bool
 
+event punk_transferred_out:
+  owner: address
+  index: uint256
+
 name: public(String[64])
 owner: public(address)
 
@@ -714,7 +718,9 @@ def _attempt_liquidate(_address:address,_punk_index:uint256,manual:bool=False,fo
   CryptoPunks(self.cryptopunks_contract).transferPunk(self.dao_contract,_punk_index)
 
   self.status.positions_liquidated += 1
+
   log position_liquidated(_address,_punk_index)
+  log punk_transferred_out(_address,_punk_index)
 
   return True
 
