@@ -8,7 +8,7 @@ a nifty collection of well thought out smart contracts
 [x] - add setters and owner to manually set apr and collateralization rate
 [x] - fix usd calculations
 [ ] - add position cleanup inside tick() for positions opened and no punk deposit made
-[ ] - implement liquidation logic
+[/] - implement liquidation logic
   - only flag positions for liquidation initially
   - add function to set automatic liquidations in the future without gov wallet approvals
   - initially gov wallet needs to approve liquidations of any position
@@ -23,13 +23,6 @@ a nifty collection of well thought out smart contracts
 [ ] - vault needs to have initial debt limit in pusd
   - function to change this value by gov wallet
   - if debt limit exceeded a new position's pusd value, opening that new position will fail temporarily
-
-## @questions
-- what happens if the user has transferred their PUSD into another coin
-  - we can't burn what they have left, we're fine just taking the colatteral in that case?
-  - liquidation should function like this:
-    - colatteral goes to the dao
-    - any pusd they control should be burned
 
 # notes
 ```

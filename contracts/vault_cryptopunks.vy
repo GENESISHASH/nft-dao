@@ -213,7 +213,7 @@ def __init__(_name:String[64],_stablecoin_addr:address,_cryptopunks_addr:address
   self.lending_enabled = True
   self.apr_rate = 2
   self.colaterallization_rate = 33
-  self.compounding_interval_secs = SECS_HOUR
+  self.compounding_interval_secs = SECS_30M
   self.automatic_liquidation = False
 
   # default values (in eth) for punk types
@@ -787,7 +787,10 @@ def tick() -> uint256:
     self.positions[_address][_punk_index].time_tick = block.timestamp
     self.positions[_address][_punk_index].tick_count += 1
 
-  self.status.usd_principal_outstanding = self.status.usd_principal_issued - self.usd_principal_collected
+  # calculate outstanding principal
+  self.status.usd_principal_outstanding = self.status.usd_principal_issued
+  self.status.usd_principal_outstanding -= self.status.usd_principal_collected
+
   self.status.time_last_tick = block.timestamp
 
   return found
