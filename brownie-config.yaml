@@ -3,24 +3,26 @@ networks:
     development:
         gas_limit: max
         gas_buffer: 1
-        gas_price: 0
-        reverting_tx_gas_limit: max
-        default_contract_owner: true
-        cmd_settings: null
-    ropsten:
-        gas_limit: max
-        gas_buffer: 1
-        gas_price: 0
+        gas_price: auto
         reverting_tx_gas_limit: max
         default_contract_owner: true
         cmd_settings: null
     kovan:
         gas_limit: max
         gas_buffer: 1
-        gas_price: 0
+        gas_price: auto
         reverting_tx_gas_limit: max
         default_contract_owner: true
         cmd_settings: null
+        explorer: https://api-kovan.etherscan.io/api
+    ropsten:
+        gas_limit: max
+        gas_buffer: 1
+        gas_price: auto
+        reverting_tx_gas_limit: max
+        default_contract_owner: true
+        cmd_settings: null
+        explorer: https://api-ropsten.etherscan.io/api
     live:
         gas_limit: auto
         gas_buffer: 1.1
@@ -37,4 +39,5 @@ compiler:
         remappings: null
     vyper:
         version: 0.2.15
+dev_deployment_artifacts: true
 

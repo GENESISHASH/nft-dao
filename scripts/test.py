@@ -11,10 +11,14 @@ NETWORK = os.environ.get('NETWORK')
 
 if NETWORK == 'mainnet':
   account = accounts.load('devel')
+  publish_source = True
 elif NETWORK == 'kovan':
   account = accounts.load('devel','oijoij')
+  publish_source = True
 else:
+  NETWORK = 'localhost'
   account = accounts.load('devel','oijoij')
+  publish_source = False
 
 # example punks
 PUNK_INDEX_FLOOR = 2
@@ -24,8 +28,6 @@ PUNK_INDEX_ALIEN = 635
 def print_json(x): return print(json.dumps(x,sort_keys=False,indent=2))
 
 def main():
-  publish_source = False
-
   print('Deploying on network',NETWORK)
 
   # deploy price oracle
