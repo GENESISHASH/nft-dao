@@ -125,6 +125,10 @@ def main():
   print('Vault status:')
   print_json(_vault.show_status().dict())
 
+  # @todo: currently working on this
+  # print(_vault.show_all_positions(account))
+
+  """
   # attempt to close position
   print('Attempting to close the position..')
   _vault.close_position(PUNK_INDEX_FLOOR,{'from':account})
