@@ -250,8 +250,8 @@ def __init__(_name:String[64],_stablecoin_addr:address,_cryptopunks_addr:address
 
   log contract_created(block.timestamp)
 
-@external
 @view
+@external
 def show_status() -> Status:
   return self.status
 
@@ -420,7 +420,7 @@ def preview_position(_punk_index:uint256) -> PositionPreview:
   return pos_preview
 
 @external
-@nonreentrant('open_position')
+@nonreentrant('lock')
 def open_position(_punk_index:uint256):
   assert _punk_index < 10000, 'invalid_punk'
   assert self.lending_enabled, 'lending_disabled'
@@ -499,7 +499,7 @@ def show_position(_punk_index:uint256) -> Position:
   return self.positions[owner][_punk_index]
 
 @external
-@nonreentrant('borrow')
+@nonreentrant('lock')
 def borrow(_punk_index:uint256,_amount:uint256):
   assert self.lending_enabled, 'lending_disabled'
   assert msg.sender == self.positions[msg.sender][_punk_index].owner
@@ -542,7 +542,7 @@ def borrow(_punk_index:uint256,_amount:uint256):
   log credit_minted(msg.sender,_punk_index,_amount)
 
 @external
-@nonreentrant('repay')
+@nonreentrant('lock')
 def repay(_punk_index:uint256,_amount:uint256):
   assert msg.sender == self.positions[msg.sender][_punk_index].owner
   assert not self.positions[msg.sender][_punk_index].liquidated, 'position_liquidated'
@@ -622,7 +622,7 @@ def repay(_punk_index:uint256,_amount:uint256):
   self._update_position_health_score(msg.sender,_punk_index)
 
 @external
-@nonreentrant('close_position')
+@nonreentrant('lock')
 def close_position(_punk_index:uint256):
   assert msg.sender == self.positions[msg.sender][_punk_index].owner
   assert not self.positions[msg.sender][_punk_index].liquidated, 'position_liquidated'
@@ -697,7 +697,7 @@ def _attempt_flag(_address:address,_punk_index:uint256) -> bool:
   return position.flagged
 
 @internal
-@nonreentrant('_attempt_liquidate')
+@nonreentrant('lock')
 def _attempt_liquidate(_address:address,_punk_index:uint256,manual:bool=False,forced:bool=False) -> bool:
 
   # only allow manual liquidations
@@ -719,7 +719,7 @@ def _attempt_liquidate(_address:address,_punk_index:uint256,manual:bool=False,fo
   return True
 
 @external
-@nonreentrant('liquidate')
+@nonreentrant('lock')
 def liquidate(_address:address,_punk_index:uint256):
   assert msg.sender == self.owner
   self._attempt_liquidate(_address,_punk_index,True,True)

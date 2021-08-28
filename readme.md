@@ -1,33 +1,27 @@
-# pusd
-a nifty collection of well thought out smart contracts
+# nftdao
 
-# @todo
-[x] - add minimum time interval to interest adding logic
-[x] - implement chainlink pricefeed oracle
-[x] - add vault burn functionality for principal payments
-[x] - add setters and owner to manually set apr and collateralization rate
-[x] - fix usd calculations
-[ ] - add position cleanup inside tick() for positions opened and no punk deposit made
-[/] - implement liquidation logic
-  - only flag positions for liquidation initially
-  - add function to set automatic liquidations in the future without gov wallet approvals
-  - initially gov wallet needs to approve liquidations of any position
-    - admin web3 interface allows for execution liquidations manually
-      - interface will show any position flagged for liquidation, age and healthscore
-      - allow option to run liquidate() on it in a single click
-  - total vault debt on liquidation is recalculated upon each successful liquidation
-    - burn outstanding pusd value of position (-vault.total_debt)
-    - minus updated punk type value as defined by chainlink (-vault.total_debt)
-    - punk transferred to dao (any interest payments have already been transferred to dao at this point)
-[ ] - add ability for dao to open position within the vault using a stablecoin
-[ ] - vault needs to have initial debt limit in pusd
-  - function to change this value by gov wallet
-  - if debt limit exceeded a new position's pusd value, opening that new position will fail temporarily
+## @todo: contracts
+- [x] add minimum time interval to interest adding logic
+- [ ] optimize `tick()` to be less gas-intensive
+- [x] implement chainlink pricefeed oracle including eth feed and floor prices for punks
+- [x] implement chainlink keeper to call `contract.tick()`
+- [x] add vault burn functionality for principal repayments
+- [x] add setters and owner to manually set apr and collateralization rate
+- [x] fix usd calculations
+- [x] vault should be able to disable lending completely at will
+- [x] vault should be able to disable interest accumulation on existing positions at will
+- [ ] implement position cleanup inside `tick()` for positions opened without punk deposit made within 12hrs
+- [ ] (wip) fully implement liquidation logic
+  - [x] `contract.tick()` marks positions positions for liquidationsbased on health score  by setting `position.flagged = true`
+  - [ ] `contract.liquidate()` should allow for admins to call manually
+  - [ ] total vault debt on liquidation is recalculated upon each successful liquidation
+    - punk collateral must be transferred to dao
+    - position must be closed and marked as liquidated
+- [ ] add exception for dao to open position within the vault using a stablecoin
+- [ ] create ico contract
 
-# notes
-```
-Compiler Version: v0.4.26+commit.4563c3fc
-Optimization Enabled: 1
-Runs: 200
-`sicall``
+## @todo: frontend
+- [ ] create react prototype for app (shit design)
+- [ ] prelim design work completed for app.\* subdomain 
+- [ ] design work completed for ico 1-pager
 
