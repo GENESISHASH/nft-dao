@@ -5,6 +5,9 @@ import json
 import time
 import logging
 
+from dotenv import load_dotenv
+load_dotenv()
+
 from brownie import *
 
 NETWORK = os.environ.get('NETWORK')
