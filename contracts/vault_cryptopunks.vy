@@ -708,7 +708,9 @@ def _attempt_liquidate(_address:address,_punk_index:uint256,manual:bool=False,fo
   if not self.automatic_liquidation:
     if not manual or not forced: return False
 
-  assert self.positions[_address][_punk_index].flagged, 'position_not_flagged'
+  if not forced:
+    assert self.positions[_address][_punk_index].flagged, 'position_not_flagged'
+
   assert not self.positions[_address][_punk_index].liquidated, 'position_liquidated'
 
   # perform liquidation

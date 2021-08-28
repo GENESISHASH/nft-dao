@@ -3,7 +3,7 @@ networks:
     development:
         gas_limit: max
         gas_buffer: 1
-        gas_price: auto
+        gas_price: 0
         reverting_tx_gas_limit: max
         default_contract_owner: true
         cmd_settings: null
@@ -39,5 +39,4 @@ compiler:
         remappings: null
     vyper:
         version: 0.2.15
-dev_deployment_artifacts: true
 
