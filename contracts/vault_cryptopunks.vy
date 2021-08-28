@@ -16,7 +16,7 @@ event interest_enabled_changed:
 event position_opened:
   owner: address
   index: uint256
-  credit: uint256
+  value: uint256
 
 event position_closed:
   owner: address
@@ -155,7 +155,6 @@ struct Status:
   usd_interest_collected: uint256
   usd_principal_issued: uint256
   usd_principal_collected: uint256
-  usd_principal_outstanding: uint256
   time_last_tick: uint256
   time_last_oracle: uint256
 
@@ -472,6 +471,8 @@ def open_position(_punk_index:uint256):
     apr_rate: self.apr_rate,
   })
 
+  pos: Position = self.positions[msg.sender][_punk_index]
+
   self.positions_punks[_punk_index] = msg.sender
 
   self.status.current_positions_open += 1
@@ -763,10 +764,6 @@ def tick() -> uint256:
     # add tick metrics
     self.positions[_address][_punk_index].time_tick = block.timestamp
     self.positions[_address][_punk_index].tick_count += 1
-
-  # calculate outstanding principal
-  self.status.usd_principal_outstanding = self.status.usd_principal_issued
-  self.status.usd_principal_outstanding -= self.status.usd_principal_collected
 
   self.status.time_last_tick = block.timestamp
 
