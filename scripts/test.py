@@ -3,10 +3,18 @@
 import os
 import json
 import time
+import logging
 
 from brownie import *
 
 NETWORK = os.environ.get('NETWORK')
+
+if NETWORK == 'mainnet':
+  account = accounts.load('devel')
+elif NETWORK == 'kovan':
+  account = accounts.load('devel','oijoij')
+else:
+  account = accounts.load('devel','oijoij')
 
 # example punks
 PUNK_INDEX_FLOOR = 2
@@ -17,7 +25,6 @@ def print_json(x): return print(json.dumps(x,sort_keys=False,indent=2))
 
 def main():
   publish_source = False
-  account = accounts.load('devel')
 
   print('Deploying on network',NETWORK)
 

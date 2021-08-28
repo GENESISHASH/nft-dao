@@ -88,14 +88,12 @@ stablecoin_contract: public(address)
 cryptopunks_contract: public(address)
 dao_contract: public(address)
 oracle_contract: public(address)
-
-lending_enabled: public(bool)
-interest_enabled: public(bool)
-
 apr_rate: public(uint256)
 colaterallization_rate: public(uint256)
 compounding_interval_secs: public(uint256)
 automatic_liquidation: public(bool)
+lending_enabled: public(bool)
+interest_enabled: public(bool)
 
 SECS_MINUTE: constant(uint256) = 60
 SECS_15M: constant(uint256) = 60 * 15
@@ -104,8 +102,6 @@ SECS_HOUR: constant(uint256) = 3600
 SECS_DAY: constant(uint256) = 86400
 SECS_WEEK: constant(uint256) = 86400 * 7
 SECS_YEAR: constant(uint256) = 86400 * 365
-
-# positions without a deposit will expire after this time
 SECS_STALE_POSITION_EXPIRES: constant(uint256) = SECS_HOUR
 
 struct Position:
@@ -139,15 +135,10 @@ struct Position:
   tick_count: uint256
   apr_rate: uint256
 
-positions: HashMap[address,HashMap[uint256,Position]]
-positions_punks: HashMap[uint256,address]
-
-punk_values_eth: HashMap[String[32],uint256]
-punk_values_usd: HashMap[String[32],uint256]
-punk_dictionary: HashMap[uint256,String[32]]
-
-tick_i: uint256
-tick_chunk_size: uint256
+struct PunkInfo:
+  index: uint256
+  type: String[32]
+  owner: address
 
 struct Status:
   current_positions_open: uint256
@@ -167,6 +158,27 @@ struct Status:
   usd_principal_outstanding: uint256
   time_last_tick: uint256
   time_last_oracle: uint256
+
+struct PositionPreview:
+  asset_index: uint256
+  asset_type: String[32]
+  asset_value_eth: uint256
+  asset_value_eth_human: uint256
+  asset_value_usd: uint256
+  asset_value_usd_human: uint256
+  credit_limit_usd: uint256
+  credit_limit_usd_human: uint256
+  apr_rate: uint256
+
+positions: HashMap[address,HashMap[uint256,Position]]
+positions_punks: HashMap[uint256,address]
+
+punk_values_eth: HashMap[String[32],uint256]
+punk_values_usd: HashMap[String[32],uint256]
+punk_dictionary: HashMap[uint256,String[32]]
+
+tick_i: uint256
+tick_chunk_size: uint256
 
 status: public(Status)
 
@@ -264,15 +276,15 @@ def update_oracle_pricing() -> bool:
 
 @external
 def set_tick_chunk_size(_number:uint256) -> bool:
-  assert msg.sender == self.owner, 'unauthorized'
+  assert msg.sender == self.owner
   self.tick_chunk_size = _number
   return True
 
 @external
 def set_apr_rate(_number:uint256) -> bool:
-  assert msg.sender == self.owner, 'unauthorized'
-  assert _number < 100, 'invalid integer'
-  assert _number > 0, 'invalid integer'
+  assert msg.sender == self.owner
+  assert _number < 100
+  assert _number > 0
 
   self.apr_rate = _number
   log apr_rate_changed(_number)
@@ -280,96 +292,77 @@ def set_apr_rate(_number:uint256) -> bool:
 
 @external
 def set_colaterallization_rate(_number:uint256) -> bool:
-  assert msg.sender == self.owner, 'unauthorized'
-  assert _number < 100, 'invalid integer'
-  assert _number > 0, 'invalid integer'
+  assert msg.sender == self.owner
+  assert _number < 100
+  assert _number > 0
 
   self.colaterallization_rate = _number
   log colaterallization_rate_changed(_number)
   return True
 
 @external
-def set_compounding_interval_secs(_number:uint256) -> bool:
-  assert msg.sender == self.owner, 'unauthorized'
+def set_compounding_interval_secs(_number:uint256):
+  assert msg.sender == self.owner
 
   self.compounding_interval_secs = _number
-
   log compounding_interval_changed(_number)
-  return True
 
 @external
-def set_automatic_liquidation(_enabled:bool) -> bool:
-  assert msg.sender == self.owner, 'unauthorized'
+def set_automatic_liquidation(_enabled:bool):
+  assert msg.sender == self.owner
 
   self.automatic_liquidation = _enabled
-
   log automatic_liquidation_changed(_enabled)
-  return True
 
 @external
-def set_lending_enabled(_enabled:bool) -> bool:
-  assert msg.sender == self.owner, 'unauthorized'
+def set_lending_enabled(_enabled:bool):
+  assert msg.sender == self.owner
 
   self.lending_enabled = _enabled
-
   log lending_enabled_changed(_enabled,block.timestamp)
-  return True
 
 @external
-def set_interest_enabled(_enabled:bool) -> bool:
-  assert msg.sender == self.owner, 'unauthorized'
+def set_interest_enabled(_enabled:bool):
+  assert msg.sender == self.owner
 
   self.interest_enabled = _enabled
-
   log interest_enabled_changed(_enabled,block.timestamp)
-  return True
 
 @external
-def set_punk_value_eth(_type:String[32],_amount_eth:uint256) -> bool:
-  assert msg.sender == self.owner, 'unauthorized'
-  assert self.punk_values_eth[_type] > 0, 'invalid_punk_type'
+def set_punk_value_eth(_type:String[32],_amount_eth:uint256):
+  assert msg.sender == self.owner
+  assert self.punk_values_eth[_type] > 0
 
   self.punk_values_eth[_type] = _amount_eth
   self._update_oracle_pricing()
-
   log punk_value_set_eth(_type,_amount_eth)
-  return True
 
 @view
 @internal
 def _get_punk_type(_punk_index:uint256) -> String[32]:
-  assert _punk_index < 10000, 'invalid_punk'
+  assert _punk_index < 10000
 
-  if self.punk_dictionary[_punk_index] == '':
-    return 'floor'
-
+  if self.punk_dictionary[_punk_index] == '': return 'floor'
   return self.punk_dictionary[_punk_index]
 
 @view
 @internal
 def _get_punk_value_eth(_punk_index:uint256) -> uint256:
-  assert _punk_index < 10000, 'invalid_punk'
-
+  assert _punk_index < 10000
   return self.punk_values_eth[self._get_punk_type(_punk_index)]
 
 @view
 @internal
 def _get_punk_value_usd(_punk_index:uint256) -> uint256:
-  assert _punk_index < 10000, 'invalid_punk'
-
+  assert _punk_index < 10000
   return self.punk_values_usd[self._get_punk_type(_punk_index)]
 
 @internal
 def _get_punk_owner(_punk_index:uint256) -> address:
-  assert _punk_index < 10000, 'invalid_punk'
+  assert _punk_index < 10000
 
   owner_addr: address = CryptoPunks(self.cryptopunks_contract).punkIndexToAddress(_punk_index)
   return owner_addr
-
-struct PunkInfo:
-  index: uint256
-  type: String[32]
-  owner: address
 
 @external
 def get_punk_info(_punk_index:uint256) -> PunkInfo:
@@ -407,24 +400,13 @@ def _get_collateralized_punk_value_usd(_punk_index:uint256) -> uint256:
 def get_punk_owner(_punk_index:uint256) -> address:
   return self._get_punk_owner(_punk_index)
 
-struct PositionPreview:
-  asset_index: uint256
-  asset_type: String[32]
-  asset_value_eth: uint256
-  asset_value_eth_human: uint256
-  asset_value_usd: uint256
-  asset_value_usd_human: uint256
-  credit_limit_usd: uint256
-  credit_limit_usd_human: uint256
-  apr_rate: uint256
-
 @view
 @external
 def preview_position(_punk_index:uint256) -> PositionPreview:
   assert _punk_index < 10000, 'invalid_punk'
   assert self.lending_enabled, 'lending_disabled'
 
-  preview: PositionPreview = PositionPreview({
+  pos_preview: PositionPreview = PositionPreview({
     asset_index: _punk_index,
     asset_type: self._get_punk_type(_punk_index),
     asset_value_eth: self._get_punk_value_eth(_punk_index),
@@ -436,25 +418,25 @@ def preview_position(_punk_index:uint256) -> PositionPreview:
     apr_rate: self.apr_rate
   })
 
-  return preview
+  return pos_preview
 
 @external
 @nonreentrant('open_position')
-def open_position(_punk_index:uint256) -> bool:
+def open_position(_punk_index:uint256):
   assert _punk_index < 10000, 'invalid_punk'
   assert self.lending_enabled, 'lending_disabled'
 
   punk_owner: address = self._get_punk_owner(_punk_index)
 
-  assert punk_owner == msg.sender, 'punk_not_owned'
+  assert punk_owner == msg.sender
   assert self.positions[msg.sender][_punk_index].time_created == 0, 'position_already_exists'
 
   self._update_oracle_pricing()
 
   asset_value_eth: uint256 = self._get_punk_value_eth(_punk_index)
-  colat_value_eth: uint256 = self._get_collateralized_punk_value_eth(_punk_index)
-
   asset_value_usd: uint256 = self._get_punk_value_usd(_punk_index)
+
+  colat_value_eth: uint256 = self._get_collateralized_punk_value_eth(_punk_index)
   colat_value_usd: uint256 = self._get_collateralized_punk_value_usd(_punk_index)
 
   # create position
@@ -497,12 +479,9 @@ def open_position(_punk_index:uint256) -> bool:
 
   log position_opened(msg.sender,_punk_index,colat_value_usd)
 
-  return True
-
-
 # update a position's health score
 @internal
-def _update_position_health_score(_address:address,_punk_index:uint256) -> bool:
+def _update_position_health_score(_address:address,_punk_index:uint256):
   position: Position = self.positions[_address][_punk_index]
 
   health_score: uint256 = self._percent_uint(position.debt_total,position.asset_value_usd)
@@ -512,8 +491,6 @@ def _update_position_health_score(_address:address,_punk_index:uint256) -> bool:
   self.positions[_address][_punk_index].health_score_100 = health_score_100
   self.positions[_address][_punk_index].time_health_score = block.timestamp
 
-  return True
-
 @view
 @external
 def show_position(_punk_index:uint256) -> Position:
@@ -522,13 +499,13 @@ def show_position(_punk_index:uint256) -> Position:
 
 @external
 @nonreentrant('borrow')
-def borrow(_punk_index:uint256,_amount:uint256) -> bool:
-  assert msg.sender == self.positions[msg.sender][_punk_index].owner, 'unauthorized'
-  assert not self.positions[msg.sender][_punk_index].liquidated, 'position_liquidated'
+def borrow(_punk_index:uint256,_amount:uint256):
   assert self.lending_enabled, 'lending_disabled'
+  assert msg.sender == self.positions[msg.sender][_punk_index].owner
+  assert not self.positions[msg.sender][_punk_index].liquidated
 
   punk_owner: address = self._get_punk_owner(_punk_index)
-  assert punk_owner == self, 'punk_not_deposited'
+  assert punk_owner == self
 
   self._update_position_health_score(msg.sender,_punk_index)
 
@@ -563,12 +540,10 @@ def borrow(_punk_index:uint256,_amount:uint256) -> bool:
 
   log credit_minted(msg.sender,_punk_index,_amount)
 
-  return True
-
 @external
 @nonreentrant('repay')
-def repay(_punk_index:uint256,_amount:uint256) -> bool:
-  assert msg.sender == self.positions[msg.sender][_punk_index].owner, 'unauthorized'
+def repay(_punk_index:uint256,_amount:uint256):
+  assert msg.sender == self.positions[msg.sender][_punk_index].owner
   assert not self.positions[msg.sender][_punk_index].liquidated, 'position_liquidated'
   assert not self.positions[msg.sender][_punk_index].repaid, 'position_repaid'
 
@@ -645,12 +620,10 @@ def repay(_punk_index:uint256,_amount:uint256) -> bool:
 
   self._update_position_health_score(msg.sender,_punk_index)
 
-  return True
-
 @external
 @nonreentrant('close_position')
-def close_position(_punk_index:uint256) -> bool:
-  assert msg.sender == self.positions[msg.sender][_punk_index].owner, 'unauthorized'
+def close_position(_punk_index:uint256):
+  assert msg.sender == self.positions[msg.sender][_punk_index].owner
   assert not self.positions[msg.sender][_punk_index].liquidated, 'position_liquidated'
   assert self.positions[msg.sender][_punk_index].repaid, 'position_not_repaid'
 
@@ -667,8 +640,6 @@ def close_position(_punk_index:uint256) -> bool:
   self.status.positions_closed += 1
 
   log position_closed(msg.sender,_punk_index)
-
-  return True
 
 @internal
 def _attempt_add_interest(_address:address,_punk_index:uint256) -> uint256:
@@ -725,11 +696,12 @@ def _attempt_flag(_address:address,_punk_index:uint256) -> bool:
   return position.flagged
 
 @internal
-def _attempt_liquidate(_address:address,_punk_index:uint256,manual:bool=False) -> bool:
+@nonreentrant('_attempt_liquidate')
+def _attempt_liquidate(_address:address,_punk_index:uint256,manual:bool=False,forced:bool=False) -> bool:
 
   # only allow manual liquidations
   if not self.automatic_liquidation:
-    if not manual: return False
+    if not manual or not forced: return False
 
   assert self.positions[_address][_punk_index].flagged, 'position_not_flagged'
   assert not self.positions[_address][_punk_index].liquidated, 'position_liquidated'
@@ -737,19 +709,19 @@ def _attempt_liquidate(_address:address,_punk_index:uint256,manual:bool=False) -
   # perform liquidation
   self.positions[_address][_punk_index].liquidated = True
 
-  # @todo: transfer punk to dao
-  # @todo: burn stablecoin
+  # transfer punk to dao
+  CryptoPunks(self.cryptopunks_contract).transferPunk(self.dao_contract,_punk_index)
 
   self.status.positions_liquidated += 1
-
   log position_liquidated(_address,_punk_index)
-  return False
+
+  return True
 
 @external
 @nonreentrant('liquidate')
-def liquidate(_address:address,_punk_index:uint256) -> bool:
-  assert msg.sender == self.owner, 'unauthorized'
-  return self._attempt_liquidate(_address,_punk_index,True)
+def liquidate(_address:address,_punk_index:uint256):
+  assert msg.sender == self.owner
+  self._attempt_liquidate(_address,_punk_index,True,True)
 
 # process a chunk of positions
 @external
