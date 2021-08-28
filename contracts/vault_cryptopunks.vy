@@ -439,6 +439,7 @@ def preview_position(_punk_index:uint256) -> PositionPreview:
   return preview
 
 @external
+@nonreentrant('open_position')
 def open_position(_punk_index:uint256) -> bool:
   assert _punk_index < 10000, 'invalid_punk'
   assert self.lending_enabled, 'lending_disabled'
@@ -520,6 +521,7 @@ def show_position(_punk_index:uint256) -> Position:
   return self.positions[owner][_punk_index]
 
 @external
+@nonreentrant('borrow')
 def borrow(_punk_index:uint256,_amount:uint256) -> bool:
   assert msg.sender == self.positions[msg.sender][_punk_index].owner, 'unauthorized'
   assert not self.positions[msg.sender][_punk_index].liquidated, 'position_liquidated'
@@ -564,6 +566,7 @@ def borrow(_punk_index:uint256,_amount:uint256) -> bool:
   return True
 
 @external
+@nonreentrant('repay')
 def repay(_punk_index:uint256,_amount:uint256) -> bool:
   assert msg.sender == self.positions[msg.sender][_punk_index].owner, 'unauthorized'
   assert not self.positions[msg.sender][_punk_index].liquidated, 'position_liquidated'
@@ -645,6 +648,7 @@ def repay(_punk_index:uint256,_amount:uint256) -> bool:
   return True
 
 @external
+@nonreentrant('close_position')
 def close_position(_punk_index:uint256) -> bool:
   assert msg.sender == self.positions[msg.sender][_punk_index].owner, 'unauthorized'
   assert not self.positions[msg.sender][_punk_index].liquidated, 'position_liquidated'
@@ -742,6 +746,7 @@ def _attempt_liquidate(_address:address,_punk_index:uint256,manual:bool=False) -
   return False
 
 @external
+@nonreentrant('liquidate')
 def liquidate(_address:address,_punk_index:uint256) -> bool:
   assert msg.sender == self.owner, 'unauthorized'
   return self._attempt_liquidate(_address,_punk_index,True)
