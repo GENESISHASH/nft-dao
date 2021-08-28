@@ -118,18 +118,16 @@ def main():
   print_json(_vault.show_position(PUNK_INDEX_APE).dict())
 
   # liquidate the position
-  print('Liquidating the position:')
-  _vault.liquidate(PUNK_INDEX_APE,{'from':account})
+  # print('Liquidating the position:')
+  # _vault.liquidate(PUNK_INDEX_APE,{'from':account})
 
   # status
   print('Vault status:')
   print_json(_vault.show_status().dict())
 
-  """
   # attempt to close position
   print('Attempting to close the position..')
   _vault.close_position(PUNK_INDEX_FLOOR,{'from':account})
-  """
 
   #####################################
 
