@@ -543,6 +543,10 @@ def borrow(_punk_index:uint256,_amount:uint256):
   self.status.usd_principal_issued += _amount
   self.status.positions_borrows += 1
 
+  # make sure this is marked as non-repaid in case the user borrowed against
+  # a position that they repaid on at one time in the past
+  self.positions[msg.sender][_punk_index].repaid = False
+
   log credit_minted(msg.sender,_punk_index,_amount)
 
 @external
@@ -638,6 +642,8 @@ def close_position(_punk_index:uint256):
   # transfer punk back to owner
   CryptoPunks(self.cryptopunks_contract).transferPunk(pos_owner,pos_index)
 
+  log punk_transferred_out(pos_owner,pos_index)
+
   self.positions[msg.sender][_punk_index] = empty(Position)
   self.positions_punks[_punk_index] = empty(address)
 
@@ -703,6 +709,7 @@ def _attempt_flag(_address:address,_punk_index:uint256) -> bool:
 @internal
 @nonreentrant('lock')
 def _attempt_liquidate(_address:address,_punk_index:uint256,manual:bool=False,forced:bool=False) -> bool:
+  assert self.positions[_address][_punk_index] != empty(Position), 'position_noexists'
 
   # only allow manual liquidations
   if not self.automatic_liquidation:
@@ -711,18 +718,18 @@ def _attempt_liquidate(_address:address,_punk_index:uint256,manual:bool=False,fo
   if not forced:
     assert self.positions[_address][_punk_index].flagged, 'position_not_flagged'
 
-  assert not self.positions[_address][_punk_index].liquidated, 'position_liquidated'
-
   # perform liquidation
-  self.positions[_address][_punk_index].liquidated = True
-
-  # transfer punk to dao
   CryptoPunks(self.cryptopunks_contract).transferPunk(self.dao_contract,_punk_index)
 
+  log punk_transferred_out(_address,_punk_index)
+
+  self.positions[_address][_punk_index] = empty(Position)
+  self.positions_punks[_punk_index] = empty(address)
+
+  self.status.current_positions_open -= 1
   self.status.positions_liquidated += 1
 
   log position_liquidated(_address,_punk_index)
-  log punk_transferred_out(_address,_punk_index)
 
   return True
 
