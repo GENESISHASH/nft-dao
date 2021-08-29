@@ -108,7 +108,7 @@ def main():
 
   # print vault status
   print('Vault status')
-  print_json(_vault.show_status().dict())
+  print_json(_vault.get_status().dict())
 
   # @todo: currently working on this
   # print(_vault.show_all_positions(account))

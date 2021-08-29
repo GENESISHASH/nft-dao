@@ -810,6 +810,11 @@ def liquidate(_punk_index:uint256):
   # force liquidation
   self._attempt_liquidate(punk_owner,_punk_index,True,True)
 
+@view
+@external
+def get_status() -> Status:
+  return self.status
+
 # process a chunk of positions
 @external
 def tick() -> uint256:
