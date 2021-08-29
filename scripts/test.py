@@ -75,13 +75,12 @@ def main():
   print("Cryptobunks balance:",_cryptopunks.balanceOf(account))
 
   # print preview position
-  # print('Position preview:')
-  # print_json(_vault.preview_position(PUNK_INDEX_APE,{'from':account}).dict())
+  print('Position preview:')
+  print_json(_vault.preview_position(PUNK_INDEX_APE,{'from':account}).dict())
 
   # open a new position with my floorpunk
   _vault.open_position(PUNK_INDEX_APE,{'from':account})
 
-  """
   # ..ui waits for deposit before borrow() is able to be called
   # ui can actually call _vault.get_punk_owner() until it's the vault address
 

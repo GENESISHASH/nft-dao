@@ -107,7 +107,6 @@ SECS_HOUR: constant(uint256) = 3600
 SECS_DAY: constant(uint256) = 86400
 SECS_WEEK: constant(uint256) = 86400 * 7
 SECS_YEAR: constant(uint256) = 86400 * 365
-SECS_STALE_POSITION_EXPIRES: constant(uint256) = SECS_HOUR
 
 struct Status:
   current_positions_open: uint256
@@ -159,7 +158,7 @@ struct Position:
   apr_rate: uint256
 
 struct PositionData:
-  positions: Position[MAX_UINT256]
+  positions: Position[9999]
   length: uint256
 
 struct PunkInfo:
@@ -181,7 +180,7 @@ struct PositionPreview:
 _positions: HashMap[address,HashMap[uint256,Position]]
 
 positions: HashMap[address,PositionData]
-positions_punks: public(HashMap[uint256,address])
+positions_punks: HashMap[uint256,address]
 
 punk_values_eth: HashMap[String[32],uint256]
 punk_values_usd: HashMap[String[32],uint256]
@@ -189,6 +188,8 @@ punk_dictionary: HashMap[uint256,String[32]]
 
 tick_i: uint256
 tick_chunk_size: uint256
+
+max_asset_index: uint256
 
 status: public(Status)
 
@@ -207,7 +208,7 @@ interface Oracle:
 
 interface CryptoPunks:
   def transferPunk(_to:address,_punk_index:uint256): nonpayable
-  def punkIndexToAddress(_punk_index:uint256) -> address: nonpayable
+  def punkIndexToAddress(_punk_index:uint256) -> address: view
 
 @pure
 @internal
@@ -222,7 +223,7 @@ def _percent_of_uint(whole:uint256,percent:uint256) -> uint256:
 @external
 def __init__(_name:String[64],_stablecoin_addr:address,_cryptopunks_addr:address,_dao_addr:address,_oracle_addr:address):
   self.tick_i = 0
-  self.tick_chunk_size = 500
+  self.tick_chunk_size = 25
 
   self.name = _name
   self.owner = msg.sender
@@ -258,6 +259,8 @@ def __init__(_name:String[64],_stablecoin_addr:address,_cryptopunks_addr:address
   # define apes
   for index in [372,1021,2140,2243,2386,2460,2491,2711,2924,4156,4178,4464,5217,5314,5577,5795,6145,6915,6965,7191,8219,8498,9265,9280]:
     self.punk_dictionary[index] = 'ape'
+
+  self.max_asset_index = 0
 
   log contract_created(block.timestamp)
 
@@ -347,6 +350,7 @@ def set_punk_value_eth(_type:String[32],_amount_eth:uint256):
   self._update_oracle_pricing()
   log punk_value_set_eth(_type,_amount_eth)
 
+@view
 @internal
 def _get_punk_type(_punk_index:uint256) -> String[32]:
   assert _punk_index < 10000
@@ -354,22 +358,26 @@ def _get_punk_type(_punk_index:uint256) -> String[32]:
   if self.punk_dictionary[_punk_index] == '': return 'floor'
   return self.punk_dictionary[_punk_index]
 
+@view
 @internal
 def _get_punk_value_eth(_punk_index:uint256) -> uint256:
   assert _punk_index < 10000
   return self.punk_values_eth[self._get_punk_type(_punk_index)]
 
+@view
 @internal
 def _get_punk_value_usd(_punk_index:uint256) -> uint256:
   assert _punk_index < 10000
   return self.punk_values_usd[self._get_punk_type(_punk_index)]
 
+@view
 @internal
 def _get_punk_owner(_punk_index:uint256) -> address:
   assert _punk_index < 10000
   return CryptoPunks(self.cryptopunks_contract).punkIndexToAddress(_punk_index)
 
-@external
+@view
+@internal
 def get_punk_info(_punk_index:uint256) -> PunkInfo:
   assert _punk_index < 10000, 'invalid_punk'
 
@@ -381,6 +389,7 @@ def get_punk_info(_punk_index:uint256) -> PunkInfo:
 
   return punk_info
 
+@view
 @internal
 def _get_collateralized_punk_value_eth(_punk_index:uint256) -> uint256:
   assert _punk_index < 10000, 'invalid_punk'
@@ -390,6 +399,7 @@ def _get_collateralized_punk_value_eth(_punk_index:uint256) -> uint256:
 
   return colat_value_eth
 
+@view
 @internal
 def _get_collateralized_punk_value_usd(_punk_index:uint256) -> uint256:
   assert _punk_index < 10000, 'invalid_punk'
@@ -399,10 +409,12 @@ def _get_collateralized_punk_value_usd(_punk_index:uint256) -> uint256:
 
   return colat_value_usd
 
-@external
+@view
+@internal
 def get_punk_owner(_punk_index:uint256) -> address:
   return self._get_punk_owner(_punk_index)
 
+@view
 @external
 def preview_position(_punk_index:uint256) -> PositionPreview:
   assert _punk_index < 10000, 'invalid_punk'
@@ -423,7 +435,6 @@ def preview_position(_punk_index:uint256) -> PositionPreview:
   return pos_preview
 
 @external
-@nonreentrant('lock')
 def open_position(_punk_index:uint256):
   assert _punk_index < 10000, 'invalid_punk'
   assert self.lending_enabled, 'lending_disabled'
@@ -431,7 +442,7 @@ def open_position(_punk_index:uint256):
   punk_owner: address = self._get_punk_owner(_punk_index)
   assert punk_owner == msg.sender
 
-  assert self.positions_punks[_punk_index] != ZERO_ADDRESS, 'position_already_open'
+  assert self.positions_punks[_punk_index] == ZERO_ADDRESS, 'position_already_open'
 
   self._update_oracle_pricing()
 
@@ -483,18 +494,30 @@ def open_position(_punk_index:uint256):
   self.status.current_positions_open += 1
   self.status.positions_opened += 1
 
+  if _punk_index > self.max_asset_index:
+    self.max_asset_index = _punk_index
+
   log position_opened(msg.sender,_punk_index,colat_value_usd)
 
+@view
 @internal
 def _find_punk_position_index(_address:address,_punk_index:uint256) -> uint256:
+  found: uint256 = 0
+
   for i in range(0,9999):
     pos: Position = self.positions[_address].positions[i]
-    pos_len: uint256 = self.positions[_address].length
 
-    if i > pos_len: raise 'position_index_not_found'
+    if pos == empty(Position):
+      continue
 
-    assert pos != empty(Position), 'position_empty'
-    if pos.asset_index == _punk_index: return i
+    found += 1
+
+    if pos.asset_index == _punk_index:
+      return i
+
+    if found >= self.positions[_address].length:
+      break
+
   raise 'position_empty'
 
 # update a position's health score
@@ -512,15 +535,16 @@ def _update_position_health_score(_address:address,_punk_index:uint256):
 
   self.positions[_address].positions[pos_i] = position
 
+@view
 @external
 def show_position(_punk_index:uint256) -> Position:
   punk_owner: address = self.positions_punks[_punk_index]
   pos_i: uint256 = self._find_punk_position_index(punk_owner,_punk_index)
 
-  return self.positions[punk_owner].positions[pos_i]
+  position: Position = self.positions[punk_owner].positions[pos_i]
+  return position
 
 @external
-@nonreentrant('lock')
 def borrow(_punk_index:uint256,_amount:uint256):
   assert self.lending_enabled, 'lending_disabled'
 
@@ -575,7 +599,6 @@ def borrow(_punk_index:uint256,_amount:uint256):
   log credit_minted(msg.sender,_punk_index,_amount)
 
 @external
-@nonreentrant('lock')
 def repay(_punk_index:uint256,_amount:uint256):
   pos_i: uint256 = self._find_punk_position_index(msg.sender,_punk_index)
   position: Position = self.positions[msg.sender].positions[pos_i]
@@ -659,7 +682,6 @@ def repay(_punk_index:uint256,_amount:uint256):
   self._update_position_health_score(msg.sender,_punk_index)
 
 @external
-@nonreentrant('lock')
 def close_position(_punk_index:uint256):
   pos_i: uint256 = self._find_punk_position_index(msg.sender,_punk_index)
   position: Position = self.positions[msg.sender].positions[pos_i]
@@ -707,11 +729,11 @@ def _attempt_add_interest(_address:address,_punk_index:uint256) -> uint256:
   if time_difference_secs > self.compounding_interval_secs:
     new_interest: uint256 = time_difference_secs * interest_per_second
 
+    self.status.usd_interest_added += new_interest
+
     position.debt_interest += new_interest
     position.debt_total += new_interest
     position.time_interest = block.timestamp
-
-    self.status.usd_interest_added += new_interest
 
     self.positions[_address].positions[pos_i] = position
 
@@ -731,7 +753,6 @@ def _attempt_flag(_address:address,_punk_index:uint256) -> bool:
       position.flagged = True
 
       self.status.positions_flagged += 1
-
       self.positions[_address].positions[pos_i] = position
 
       log position_flagged(_address,_punk_index)
@@ -742,7 +763,6 @@ def _attempt_flag(_address:address,_punk_index:uint256) -> bool:
     position.flagged = False
 
     self.status.positions_flagged -= 1
-
     self.positions[_address].positions[pos_i] = position
 
     log position_unflagged(_address,_punk_index)
@@ -752,7 +772,6 @@ def _attempt_flag(_address:address,_punk_index:uint256) -> bool:
   return position.flagged
 
 @internal
-@nonreentrant('lock')
 def _attempt_liquidate(_address:address,_punk_index:uint256,manual:bool=False,forced:bool=False) -> bool:
   pos_i: uint256 = self._find_punk_position_index(_address,_punk_index)
   position: Position = self.positions[_address].positions[pos_i]
@@ -785,7 +804,6 @@ def _attempt_liquidate(_address:address,_punk_index:uint256,manual:bool=False,fo
   return True
 
 @external
-@nonreentrant('lock')
 def liquidate(_punk_index:uint256):
   assert msg.sender == self.owner
 
@@ -814,7 +832,7 @@ def tick() -> uint256:
     _punk_index: uint256 = self.tick_i
     self.tick_i += 1
 
-    if _punk_index > 9999:
+    if _punk_index > self.max_asset_index:
       self.tick_i = 0
       continue
 
