@@ -85,6 +85,10 @@ event punk_transferred_out:
   owner: address
   index: uint256
 
+event punk_transferred_in:
+  owner: address
+  index: uint256
+
 name: public(String[64])
 owner: public(address)
 
@@ -492,6 +496,35 @@ def open_position(_punk_index:uint256):
 
   log position_opened(msg.sender,_punk_index,colat_value_usd)
 
+@external
+def check_asset_deposit(_punk_index:uint256) -> bool:
+  assert _punk_index < 10000, 'invalid_punk'
+  assert self.positions_punks[_punk_index] == msg.sender, 'position_not_owned'
+
+  punk_owner: address = self._get_punk_owner(_punk_index)
+  if punk_owner != self: return False
+
+  pos_i: uint256 = self._find_punk_position_index(msg.sender,_punk_index)
+  position: Position = self.positions[msg.sender].positions[pos_i]
+
+  assert position != empty(Position), 'position_not_found'
+
+  if position.asset_deposited: return True
+
+  position.asset_deposited = True
+  position.time_deposited = block.timestamp
+
+  self.status.assets_deposited += 1
+
+  log punk_transfered_in(msg.sender,_punk_index)
+
+  if position.time_interest == 0:
+    position.time_interest = block.timestamp
+
+  self.positions[msg.sender].positions[pos_i] = position
+
+  return True
+
 @view
 @internal
 def _find_punk_position_index(_address:address,_punk_index:uint256) -> uint256:
@@ -554,14 +587,14 @@ def borrow(_punk_index:uint256,_amount:uint256):
 
   # update deposited and interest timestamp if they don't exist
   if position.time_deposited == 0:
-    position.time_deposited = block.timestamp
+
     position.asset_deposited = True
+    position.time_deposited = block.timestamp
 
     self.positions[msg.sender].positions[pos_i] = position
-
     self.status.assets_deposited += 1
 
-    log position_asset_deposited(msg.sender,_punk_index,position.asset_value_usd)
+    log punk_transfered_in(msg.sender,_punk_index)
 
   if position.time_interest == 0:
     position.time_interest = block.timestamp

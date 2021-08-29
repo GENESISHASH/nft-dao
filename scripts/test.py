@@ -6,14 +6,14 @@ import time
 import logging
 
 from datetime import date
+from pathlib import Path
 
 from dotenv import load_dotenv
 load_dotenv()
 
 from brownie import *
 
-# ascii art
-print(open('./.ascii.art','r').read())
+print(Path('./.ascii.art').read_text())
 
 # select deployment network
 NETWORK = os.environ.get('NETWORK')
@@ -56,8 +56,6 @@ def main():
   _vault = vault_cryptopunks.deploy(os.environ.get('contract_name_vault_cryptopunks'),_stable_token,_cryptopunks,_dao,_price_oracle,{"from":account},publish_source=publish_source)
   _ico_token = ico_token.deploy(os.environ.get('contract_name_ico_token'),os.environ.get('ico_token_symbol'),int(os.environ.get('ico_token_supply')),{"from":account},publish_source=publish_source)
 
-  _vault.set_compounding_interval_secs(1,{'from':account})
-
   _stable_token.addMinter(_vault,{'from':account})
   _stable_token.addMinter(_dao,{'from':account})
   _stable_token.mint(_dao,(2000000 * 10**18),{'from':account})
@@ -70,13 +68,8 @@ def main():
 
   _vault.open_position(PUNK_INDEX_APE,{'from':account})
 
-  # (ui waits for user to deposit punk into vault, here we do it manual)
+  # (ui will wait for user to deposit punk into vault, here we do it manual)
   _cryptopunks.transferPunk(_vault,PUNK_INDEX_APE,{'from':account})
-
-  _vault.tick()
-
-  print('Position after deposit of punk',PUNK_INDEX_APE)
-  print_json(_vault.show_position(PUNK_INDEX_APE).dict())
 
   borrow_amount = 1000000
   repay_amount = 250000
