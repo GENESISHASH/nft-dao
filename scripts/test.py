@@ -5,6 +5,8 @@ import json
 import time
 import logging
 
+from datetime import date
+
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -118,24 +120,39 @@ def main():
   #####################################
 
   # output details
-  prefix = ''
+  prefix = ':\n  '
 
   if NETWORK == 'mainnet':
-    prefix = 'https://etherscan.io/address/'
+    prefix += 'https://etherscan.io/address/'
   if NETWORK == 'kovan':
-    prefix = 'https://kovan.etherscan.io/address/'
+    prefix += 'https://kovan.etherscan.io/address/'
   if NETWORK == 'ropsten':
-    prefix = 'https://ropsten.etherscan.io/address/'
+    prefix += 'https://ropsten.etherscan.io/address/'
 
   print('\n=================================================\n')
 
-  print("wallet", prefix + str(account))
-  print("vault", prefix + str(_vault))
-  print("dao", prefix + str(_dao))
-  print("stable_token", prefix + str(_stable_token))
-  print("cryptopunks", prefix + str(_cryptopunks))
-  print("price_oracle", prefix + str(_price_oracle))
-  print("ico_token", prefix + str(_ico_token))
+  bulk = ''
+  bulk += (NETWORK + ' deploy ' + str(date.today()))
+  bulk += "\n```"
+  bulk += ("\nwallet" + prefix + str(account))
+  bulk += ("\nvault" + prefix + str(_vault))
+  bulk += ("\ndao" + prefix + str(_dao))
+  bulk += ("\nstable_token" + prefix + str(_stable_token))
+  bulk += ("\ncryptopunks" + prefix + str(_cryptopunks))
+  bulk += ("\nprice_oracle" + prefix + str(_price_oracle))
+  bulk += ("\nico_token" + prefix + str(_ico_token))
+  bulk += "\n```"
+
+  if os.environ.get('slack_enabled'):
+    print('slack is enabled')
+    slack_channel = os.environ.get('slack_channel')
+    slack_webhook_url = os.environ.get('slack_webhook_url')
+
+    command = 'curl -X POST --data-urlencode "payload={\"channel\": \"#contracts\", \"username\": \"webhookbot\", \"text\": \"This is posted to #contracts and comes from a bot named webhookbot.\", \"icon_emoji\": \":ghost:\"}" https://hooks.slack.com/services/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'
+    print(command)
+
+    #print(f'curl -X POST --data-urlencode "payload={"channel": "{slack_channel}", "username": "webhookbot", "text": "This is posted to #contracts and comes from a bot named webhookbot.", "icon_emoji": ":ghost:"}" https://hooks.slack.com/services/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')
+    print('DONE')
 
   print("\n")
   print('Finished')
