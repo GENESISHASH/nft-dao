@@ -92,6 +92,7 @@ stablecoin_contract: public(address)
 cryptopunks_contract: public(address)
 dao_contract: public(address)
 oracle_contract: public(address)
+
 apr_rate: public(uint256)
 colaterallization_rate: public(uint256)
 compounding_interval_secs: public(uint256)
@@ -346,7 +347,6 @@ def set_punk_value_eth(_type:String[32],_amount_eth:uint256):
   self._update_oracle_pricing()
   log punk_value_set_eth(_type,_amount_eth)
 
-@view
 @internal
 def _get_punk_type(_punk_index:uint256) -> String[32]:
   assert _punk_index < 10000
@@ -354,13 +354,11 @@ def _get_punk_type(_punk_index:uint256) -> String[32]:
   if self.punk_dictionary[_punk_index] == '': return 'floor'
   return self.punk_dictionary[_punk_index]
 
-@view
 @internal
 def _get_punk_value_eth(_punk_index:uint256) -> uint256:
   assert _punk_index < 10000
   return self.punk_values_eth[self._get_punk_type(_punk_index)]
 
-@view
 @internal
 def _get_punk_value_usd(_punk_index:uint256) -> uint256:
   assert _punk_index < 10000
@@ -369,9 +367,8 @@ def _get_punk_value_usd(_punk_index:uint256) -> uint256:
 @internal
 def _get_punk_owner(_punk_index:uint256) -> address:
   assert _punk_index < 10000
-  CryptoPunks(self.cryptopunks_contract).punkIndexToAddress(_punk_index)
+  return CryptoPunks(self.cryptopunks_contract).punkIndexToAddress(_punk_index)
 
-@view
 @external
 def get_punk_info(_punk_index:uint256) -> PunkInfo:
   assert _punk_index < 10000, 'invalid_punk'
@@ -384,7 +381,6 @@ def get_punk_info(_punk_index:uint256) -> PunkInfo:
 
   return punk_info
 
-@view
 @internal
 def _get_collateralized_punk_value_eth(_punk_index:uint256) -> uint256:
   assert _punk_index < 10000, 'invalid_punk'
@@ -394,7 +390,6 @@ def _get_collateralized_punk_value_eth(_punk_index:uint256) -> uint256:
 
   return colat_value_eth
 
-@view
 @internal
 def _get_collateralized_punk_value_usd(_punk_index:uint256) -> uint256:
   assert _punk_index < 10000, 'invalid_punk'
@@ -408,7 +403,6 @@ def _get_collateralized_punk_value_usd(_punk_index:uint256) -> uint256:
 def get_punk_owner(_punk_index:uint256) -> address:
   return self._get_punk_owner(_punk_index)
 
-@view
 @external
 def preview_position(_punk_index:uint256) -> PositionPreview:
   assert _punk_index < 10000, 'invalid_punk'
@@ -518,7 +512,6 @@ def _update_position_health_score(_address:address,_punk_index:uint256):
 
   self.positions[_address].positions[pos_i] = position
 
-@view
 @external
 def show_position(_punk_index:uint256) -> Position:
   punk_owner: address = self.positions_punks[_punk_index]
