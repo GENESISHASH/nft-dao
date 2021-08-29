@@ -221,7 +221,7 @@ def _percent_of_uint(whole:uint256,percent:uint256) -> uint256:
 @external
 def __init__(_name:String[64],_stablecoin_addr:address,_cryptopunks_addr:address,_dao_addr:address,_oracle_addr:address):
   self.tick_i = 0
-  self.tick_chunk_size = 25
+  self.tick_chunk_size = 100
 
   self.name = _name
   self.owner = msg.sender
