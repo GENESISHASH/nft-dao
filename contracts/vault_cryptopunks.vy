@@ -177,8 +177,6 @@ struct PositionPreview:
   credit_limit_usd_human: uint256
   apr_rate: uint256
 
-_positions: HashMap[address,HashMap[uint256,Position]]
-
 positions: HashMap[address,PositionData]
 positions_punks: HashMap[uint256,address]
 
