@@ -52,7 +52,7 @@ def main():
   _cryptopunks = cryptopunks.deploy({'from':account},publish_source=publish_source)
   _stable_token = stable_token.deploy(os.environ.get('contract_name_stable_token'),"PUSD",{'from':account},publish_source=publish_source)
   _vault = vault_cryptopunks.deploy(os.environ.get('contract_name_vault_cryptopunks'),_stable_token,_cryptopunks,_dao,_price_oracle,{"from":account},publish_source=publish_source)
-  _ico_token = ico_token.deploy(os.environ.get('contract_name_ico_token'),os.environ.get('ico_token_symbol'),os.environ.get('ico_token_supply'),{"from":account},publish_source=publish_source)
+  _ico_token = ico_token.deploy(os.environ.get('contract_name_ico_token'),os.environ.get('ico_token_symbol'),int(os.environ.get('ico_token_supply')),{"from":account},publish_source=publish_source)
 
   _vault.set_compounding_interval_secs(1,{'from':account})
 
