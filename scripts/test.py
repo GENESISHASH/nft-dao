@@ -11,7 +11,8 @@ load_dotenv()
 from brownie import *
 
 NETWORK = os.environ.get('NETWORK')
-if !NETWORK:
+
+if not NETWORK:
   NETWORK = os.environ.get('default_network')
 
 if NETWORK == 'mainnet':
@@ -27,7 +28,8 @@ else:
   account = accounts.load('devel','oijoij')
   publish_source = False
 
-print "Deploying on network", NETWORK
+print(open('./.ascii.art','r').read())
+print("Deploying on network",NETWORK)
 
 # example punks
 PUNK_INDEX_FLOOR = 2
