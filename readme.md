@@ -23,9 +23,11 @@
 - [ ] create ico contract
 
 ## @todo: frontend
-- [ ] create react prototype for app (shit design)
-- [ ] prelim design work completed for app.\* subdomain
-- [ ] design work completed for ico 1-pager
+- [ ] create react prototype app.erc247.com (tld domain tbd)
+- [ ] integrate web3 to allow for position previews based on punks in connected wallet
+  - [ ] allow opening of a position
+- [ ] design work completed for ico 1-pager (outsource)
+  - [ ] converted responsive html assets (outsource: htmlburger)
 
 ## @todo: misc
 - [x] create bytecode slicing utility to make contract verification easier
