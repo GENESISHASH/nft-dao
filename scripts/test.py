@@ -11,6 +11,8 @@ load_dotenv()
 from brownie import *
 
 NETWORK = os.environ.get('NETWORK')
+if !NETWORK:
+  NETWORK = os.environ.get('default_network')
 
 if NETWORK == 'mainnet':
   account = accounts.load('devel')
@@ -18,10 +20,14 @@ if NETWORK == 'mainnet':
 elif NETWORK == 'kovan':
   account = accounts.load('devel','oijoij')
   publish_source = True
-else:
-  NETWORK = 'localhost'
+elif NETWORK == 'localhost':
   account = accounts.load('devel','oijoij')
   publish_source = False
+else:
+  account = accounts.load('devel','oijoij')
+  publish_source = False
+
+print "Deploying on network", NETWORK
 
 # example punks
 PUNK_INDEX_FLOOR = 2
@@ -34,7 +40,7 @@ def main():
   print('Deploying on network',NETWORK)
 
   # deploy price oracle
-  _price_oracle = price_oracle.deploy('Oracle',{'from':account},publish_source=publish_source)
+  _price_oracle = price_oracle.deploy(os.environ.get('contract_name_price_oracle'),{'from':account},publish_source=publish_source)
 
   # set chainlink address in oracle
   if NETWORK == 'kovan':
@@ -43,16 +49,16 @@ def main():
     _price_oracle.set_chainlink_contract("0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419")
 
   # deploy dao
-  _dao = dao.deploy('DAO',{'from':account},publish_source=publish_source)
+  _dao = dao.deploy(os.environ.get('contract_name_dao'),{'from':account},publish_source=publish_source)
 
   # deploy cryptopunks contract
   _cryptopunks = cryptopunks.deploy({'from':account},publish_source=publish_source)
 
   # deploy stablecoin
-  _stable_token = stable_token.deploy("Stablecoin","PUSD",{'from':account},publish_source=publish_source)
+  _stable_token = stable_token.deploy(os.environ.get('contract_name_stable_token'),"PUSD",{'from':account},publish_source=publish_source)
 
   # deploy vault
-  _vault = vault_cryptopunks.deploy("Vault",_stable_token,_cryptopunks,_dao,_price_oracle,{"from":account},publish_source=publish_source)
+  _vault = vault_cryptopunks.deploy(os.environ.get('contract_name_vault_cryptopunks'),_stable_token,_cryptopunks,_dao,_price_oracle,{"from":account},publish_source=publish_source)
 
   _vault.set_compounding_interval_secs(1,{'from':account})
 
@@ -87,7 +93,7 @@ def main():
   # deposit the punk into the vault (user does this via web3)
   _cryptopunks.transferPunk(_vault,PUNK_INDEX_APE,{'from':account})
 
-  for i in range(5): _vault.tick()
+  _vault.tick()
 
   # print position
   print('Position before borrow:')
