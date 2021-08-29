@@ -108,6 +108,24 @@ SECS_WEEK: constant(uint256) = 86400 * 7
 SECS_YEAR: constant(uint256) = 86400 * 365
 SECS_STALE_POSITION_EXPIRES: constant(uint256) = SECS_HOUR
 
+struct Status:
+  current_positions_open: uint256
+  positions_opened: uint256
+  positions_closed: uint256
+  positions_repaid: uint256
+  positions_flagged: uint256
+  positions_liquidated: uint256
+  positions_borrows: uint256
+  assets_deposited: uint256
+  payments_applied: uint256
+  usd_mint_count: uint256
+  usd_interest_added: uint256
+  usd_interest_collected: uint256
+  usd_principal_issued: uint256
+  usd_principal_collected: uint256
+  time_last_tick: uint256
+  time_last_oracle: uint256
+
 struct Position:
   owner: address
   repaid: bool
@@ -139,28 +157,14 @@ struct Position:
   tick_count: uint256
   apr_rate: uint256
 
+struct PositionData:
+  positions: Position[MAX_UINT256]
+  length: uint256
+
 struct PunkInfo:
   index: uint256
   type: String[32]
   owner: address
-
-struct Status:
-  current_positions_open: uint256
-  positions_opened: uint256
-  positions_closed: uint256
-  positions_repaid: uint256
-  positions_flagged: uint256
-  positions_liquidated: uint256
-  positions_borrows: uint256
-  assets_deposited: uint256
-  payments_applied: uint256
-  usd_mint_count: uint256
-  usd_interest_added: uint256
-  usd_interest_collected: uint256
-  usd_principal_issued: uint256
-  usd_principal_collected: uint256
-  time_last_tick: uint256
-  time_last_oracle: uint256
 
 struct PositionPreview:
   asset_index: uint256
@@ -173,7 +177,9 @@ struct PositionPreview:
   credit_limit_usd_human: uint256
   apr_rate: uint256
 
-positions: public(HashMap[address,HashMap[uint256,Position]])
+_positions: HashMap[address,HashMap[uint256,Position]]
+
+positions: HashMap[address,PositionData]
 positions_punks: public(HashMap[uint256,address])
 
 punk_values_eth: HashMap[String[32],uint256]
@@ -363,10 +369,9 @@ def _get_punk_value_usd(_punk_index:uint256) -> uint256:
 @internal
 def _get_punk_owner(_punk_index:uint256) -> address:
   assert _punk_index < 10000
+  CryptoPunks(self.cryptopunks_contract).punkIndexToAddress(_punk_index)
 
-  owner_addr: address = CryptoPunks(self.cryptopunks_contract).punkIndexToAddress(_punk_index)
-  return owner_addr
-
+@view
 @external
 def get_punk_info(_punk_index:uint256) -> PunkInfo:
   assert _punk_index < 10000, 'invalid_punk'
@@ -430,9 +435,9 @@ def open_position(_punk_index:uint256):
   assert self.lending_enabled, 'lending_disabled'
 
   punk_owner: address = self._get_punk_owner(_punk_index)
-
   assert punk_owner == msg.sender
-  assert self.positions[msg.sender][_punk_index].time_created == 0, 'position_already_exists'
+
+  assert self.positions_punks[_punk_index] != ZERO_ADDRESS, 'position_already_open'
 
   self._update_oracle_pricing()
 
@@ -442,8 +447,10 @@ def open_position(_punk_index:uint256):
   colat_value_eth: uint256 = self._get_collateralized_punk_value_eth(_punk_index)
   colat_value_usd: uint256 = self._get_collateralized_punk_value_usd(_punk_index)
 
+  pos_len: uint256 = self.positions[msg.sender].length
+
   # create position
-  self.positions[msg.sender][_punk_index] = Position({
+  self.positions[msg.sender].positions[pos_len] = Position({
     owner: msg.sender,
     repaid: False,
     liquidated: False,
@@ -475,7 +482,7 @@ def open_position(_punk_index:uint256):
     apr_rate: self.apr_rate,
   })
 
-  pos: Position = self.positions[msg.sender][_punk_index]
+  self.positions[msg.sender].length += 1
 
   self.positions_punks[_punk_index] = msg.sender
 
@@ -484,60 +491,83 @@ def open_position(_punk_index:uint256):
 
   log position_opened(msg.sender,_punk_index,colat_value_usd)
 
+@internal
+def _find_punk_position_index(_address:address,_punk_index:uint256) -> uint256:
+  for i in range(0,9999):
+    pos: Position = self.positions[_address].positions[i]
+    pos_len: uint256 = self.positions[_address].length
+
+    if i > pos_len: raise 'position_index_not_found'
+
+    assert pos != empty(Position), 'position_empty'
+    if pos.asset_index == _punk_index: return i
+  raise 'position_empty'
+
 # update a position's health score
 @internal
 def _update_position_health_score(_address:address,_punk_index:uint256):
-  position: Position = self.positions[_address][_punk_index]
+  pos_i: uint256 = self._find_punk_position_index(_address,_punk_index)
+  position: Position = self.positions[_address].positions[pos_i]
 
   health_score: uint256 = self._percent_uint(position.debt_total,position.asset_value_usd)
   health_score_100: uint256 = (health_score * 100)/self.colaterallization_rate
 
-  self.positions[_address][_punk_index].health_score = health_score
-  self.positions[_address][_punk_index].health_score_100 = health_score_100
-  self.positions[_address][_punk_index].time_health_score = block.timestamp
+  position.health_score = health_score
+  position.health_score_100 = health_score_100
+  position.time_health_score = block.timestamp
+
+  self.positions[_address].positions[pos_i] = position
 
 @view
 @external
 def show_position(_punk_index:uint256) -> Position:
-  owner: address = self.positions_punks[_punk_index]
-  return self.positions[owner][_punk_index]
+  punk_owner: address = self.positions_punks[_punk_index]
+  pos_i: uint256 = self._find_punk_position_index(punk_owner,_punk_index)
+
+  return self.positions[punk_owner].positions[pos_i]
 
 @external
 @nonreentrant('lock')
 def borrow(_punk_index:uint256,_amount:uint256):
   assert self.lending_enabled, 'lending_disabled'
-  assert msg.sender == self.positions[msg.sender][_punk_index].owner
-  assert not self.positions[msg.sender][_punk_index].liquidated
 
   punk_owner: address = self._get_punk_owner(_punk_index)
-  assert punk_owner == self
+  assert punk_owner == self, 'punk_not_deposited'
+
+  pos_i: uint256 = self._find_punk_position_index(msg.sender,_punk_index)
+  position: Position = self.positions[msg.sender].positions[pos_i]
+
+  assert position != empty(Position), 'position_not_found'
+  assert not position.liquidated, 'position_liquidated'
 
   self._update_position_health_score(msg.sender,_punk_index)
 
   # update deposited and interest timestamp if they don't exist
-  if self.positions[msg.sender][_punk_index].time_deposited == 0:
-    self.positions[msg.sender][_punk_index].time_deposited = block.timestamp
-    self.positions[msg.sender][_punk_index].asset_deposited = True
+  if position.time_deposited == 0:
+    position.time_deposited = block.timestamp
+    position.asset_deposited = True
+
+    self.positions[msg.sender].positions[pos_i] = position
 
     self.status.assets_deposited += 1
 
-    log position_asset_deposited(msg.sender,_punk_index,self.positions[msg.sender][_punk_index].asset_value_usd)
+    log position_asset_deposited(msg.sender,_punk_index,position.asset_value_usd)
 
-  if self.positions[msg.sender][_punk_index].time_interest == 0:
-    self.positions[msg.sender][_punk_index].time_interest = block.timestamp
+  if position.time_interest == 0:
+    position.time_interest = block.timestamp
 
   # continue with lending logic
-  avail_credit: uint256 = self.positions[msg.sender][_punk_index].credit_limit_usd
-  avail_credit -= self.positions[msg.sender][_punk_index].credit_minted
+  avail_credit: uint256 = position.credit_limit_usd
+  avail_credit -= position.credit_minted
 
   assert _amount <= avail_credit, 'insufficient_credit'
 
   # mint stablecoin
   StableCoin(self.stablecoin_contract).mint(msg.sender,_amount)
 
-  self.positions[msg.sender][_punk_index].credit_minted += _amount
-  self.positions[msg.sender][_punk_index].debt_principal += _amount
-  self.positions[msg.sender][_punk_index].debt_total += _amount
+  position.credit_minted += _amount
+  position.debt_principal += _amount
+  position.debt_total += _amount
 
   self.status.usd_mint_count += 1
   self.status.usd_principal_issued += _amount
@@ -545,23 +575,28 @@ def borrow(_punk_index:uint256,_amount:uint256):
 
   # make sure this is marked as non-repaid in case the user borrowed against
   # a position that they repaid on at one time in the past
-  self.positions[msg.sender][_punk_index].repaid = False
+  position.repaid = False
+
+  self.positions[msg.sender].positions[pos_i] = position
 
   log credit_minted(msg.sender,_punk_index,_amount)
 
 @external
 @nonreentrant('lock')
 def repay(_punk_index:uint256,_amount:uint256):
-  assert msg.sender == self.positions[msg.sender][_punk_index].owner
-  assert not self.positions[msg.sender][_punk_index].liquidated, 'position_liquidated'
-  assert not self.positions[msg.sender][_punk_index].repaid, 'position_repaid'
+  pos_i: uint256 = self._find_punk_position_index(msg.sender,_punk_index)
+  position: Position = self.positions[msg.sender].positions[pos_i]
+
+  assert msg.sender == position.owner
+  assert position != empty(Position), 'position_not_found'
+  assert not position.liquidated, 'position_liquidated'
 
   # send payment to vault
   StableCoin(self.stablecoin_contract).minterTransferFrom(msg.sender,self,_amount)
 
   cur_amount: uint256 = _amount
-  cur_interest: uint256 = self.positions[msg.sender][_punk_index].debt_interest
-  cur_principal: uint256 = self.positions[msg.sender][_punk_index].debt_principal
+  cur_interest: uint256 = position.debt_interest
+  cur_principal: uint256 = position.debt_principal
 
   paid: uint256 = 0
   paid_interest: uint256 = 0
@@ -572,44 +607,43 @@ def repay(_punk_index:uint256,_amount:uint256):
     if cur_amount >= cur_interest:
       cur_amount -= cur_interest
       paid_interest += cur_interest
-      self.positions[msg.sender][_punk_index].debt_interest = 0
+      position.debt_interest = 0
     else:
       paid_interest += cur_amount
-      self.positions[msg.sender][_punk_index].debt_interest -= cur_amount
+      position.debt_interest -= cur_amount
 
   # pay principal
   if cur_principal > 0:
     if cur_amount >= cur_principal:
       cur_amount -= cur_principal
       paid_principal += cur_principal
-      self.positions[msg.sender][_punk_index].debt_principal = 0
+      position.debt_principal = 0
     else:
       paid_principal += cur_amount
-      self.positions[msg.sender][_punk_index].debt_principal -= cur_amount
+      position.debt_principal -= cur_amount
 
   paid += paid_interest
   paid += paid_principal
 
-  self.positions[msg.sender][_punk_index].paid_interest += paid_interest
-  self.positions[msg.sender][_punk_index].paid_principal += paid_principal
+  position.paid_interest += paid_interest
+  position.paid_principal += paid_principal
+  position.paid_total += paid
 
-  self.positions[msg.sender][_punk_index].paid_total += paid
-
-  if self.positions[msg.sender][_punk_index].debt_total > 0:
-    self.positions[msg.sender][_punk_index].debt_total -= paid
+  if position.debt_total > 0:
+    position.debt_total -= paid
 
   self.status.payments_applied += 1
 
   log payment_applied(msg.sender,_punk_index,paid)
 
   # check if position was repaid
-  if self.positions[msg.sender][_punk_index].debt_total == 0:
-    self.positions[msg.sender][_punk_index].repaid = True
-    self.positions[msg.sender][_punk_index].time_repaid = block.timestamp
+  if position.debt_total == 0:
+    position.repaid = True
+    position.time_repaid = block.timestamp
 
     self.status.positions_repaid += 1
 
-    log position_repaid(msg.sender,_punk_index,self.positions[msg.sender][_punk_index].credit_minted)
+    log position_repaid(msg.sender,_punk_index,position.credit_minted)
 
   # transfer interest to dao
   if paid_interest > 0:
@@ -627,25 +661,31 @@ def repay(_punk_index:uint256,_amount:uint256):
 
     log principal_burned(paid_principal)
 
+  # save
+  self.positions[msg.sender].positions[pos_i] = position
   self._update_position_health_score(msg.sender,_punk_index)
 
 @external
 @nonreentrant('lock')
 def close_position(_punk_index:uint256):
-  assert msg.sender == self.positions[msg.sender][_punk_index].owner
-  assert not self.positions[msg.sender][_punk_index].liquidated, 'position_liquidated'
-  assert self.positions[msg.sender][_punk_index].repaid, 'position_not_repaid'
+  pos_i: uint256 = self._find_punk_position_index(msg.sender,_punk_index)
+  position: Position = self.positions[msg.sender].positions[pos_i]
 
-  pos_owner: address = self.positions[msg.sender][_punk_index].owner
-  pos_index: uint256 = self.positions[msg.sender][_punk_index].asset_index
+  assert msg.sender == position.owner
+  assert position != empty(Position), 'position_not_found'
+  assert not position.liquidated, 'position_liquidated'
+  assert not position.repaid, 'position_not_repaid'
 
   # transfer punk back to owner
-  CryptoPunks(self.cryptopunks_contract).transferPunk(pos_owner,pos_index)
+  CryptoPunks(self.cryptopunks_contract).transferPunk(position.owner,_punk_index)
 
-  log punk_transferred_out(pos_owner,pos_index)
+  log punk_transferred_out(position.owner,_punk_index)
 
-  self.positions[msg.sender][_punk_index] = empty(Position)
+  position = empty(Position)
+
   self.positions_punks[_punk_index] = empty(address)
+  self.positions[msg.sender].positions[pos_i] = position
+  self.positions[msg.sender].length -= 1
 
   self.status.current_positions_open -= 1
   self.status.positions_closed += 1
@@ -656,11 +696,14 @@ def close_position(_punk_index:uint256):
 def _attempt_add_interest(_address:address,_punk_index:uint256) -> uint256:
   if not self.interest_enabled: return 0
 
-  interest_base_amt: uint256 = (self.positions[_address][_punk_index].debt_principal)
-  interest_base_amt += self.positions[_address][_punk_index].debt_interest
+  pos_i: uint256 = self._find_punk_position_index(_address,_punk_index)
+  position: Position = self.positions[_address].positions[pos_i]
+
+  interest_base_amt: uint256 = position.debt_principal
+  interest_base_amt += position.debt_interest
   if interest_base_amt == 0: return 0
 
-  last_interest: uint256 = self.positions[_address][_punk_index].time_interest
+  last_interest: uint256 = position.time_interest
   if last_interest == 0: return 0
 
   interest_per_year: uint256 = ((interest_base_amt * self.apr_rate) / 100)
@@ -671,11 +714,13 @@ def _attempt_add_interest(_address:address,_punk_index:uint256) -> uint256:
   if time_difference_secs > self.compounding_interval_secs:
     new_interest: uint256 = time_difference_secs * interest_per_second
 
-    self.positions[_address][_punk_index].debt_interest += new_interest
-    self.positions[_address][_punk_index].debt_total += new_interest
-    self.positions[_address][_punk_index].time_interest = block.timestamp
+    position.debt_interest += new_interest
+    position.debt_total += new_interest
+    position.time_interest = block.timestamp
 
     self.status.usd_interest_added += new_interest
+
+    self.positions[_address].positions[pos_i] = position
 
     log interest_added(_address,_punk_index,new_interest)
 
@@ -685,23 +730,30 @@ def _attempt_add_interest(_address:address,_punk_index:uint256) -> uint256:
 
 @internal
 def _attempt_flag(_address:address,_punk_index:uint256) -> bool:
-  position: Position = self.positions[_address][_punk_index]
+  pos_i: uint256 = self._find_punk_position_index(_address,_punk_index)
+  position: Position = self.positions[_address].positions[pos_i]
 
   if position.health_score > self.colaterallization_rate:
     if not position.flagged:
-      self.positions[_address][_punk_index].flagged = True
+      position.flagged = True
 
       self.status.positions_flagged += 1
 
+      self.positions[_address].positions[pos_i] = position
+
       log position_flagged(_address,_punk_index)
+
       return True
 
   if position.flagged:
-    self.positions[_address][_punk_index].flagged = False
+    position.flagged = False
 
     self.status.positions_flagged -= 1
 
+    self.positions[_address].positions[pos_i] = position
+
     log position_unflagged(_address,_punk_index)
+
     return False
 
   return position.flagged
@@ -709,25 +761,31 @@ def _attempt_flag(_address:address,_punk_index:uint256) -> bool:
 @internal
 @nonreentrant('lock')
 def _attempt_liquidate(_address:address,_punk_index:uint256,manual:bool=False,forced:bool=False) -> bool:
-  assert self.positions[_address][_punk_index] != empty(Position), 'position_noexists'
+  pos_i: uint256 = self._find_punk_position_index(_address,_punk_index)
+  position: Position = self.positions[_address].positions[pos_i]
+
+  assert position != empty(Position), 'position_noexists'
 
   # only allow manual liquidations
   if not self.automatic_liquidation:
     if not manual or not forced: return False
 
   if not forced:
-    assert self.positions[_address][_punk_index].flagged, 'position_not_flagged'
+    assert position.flagged, 'position_not_flagged'
 
   # perform liquidation
   CryptoPunks(self.cryptopunks_contract).transferPunk(self.dao_contract,_punk_index)
 
   log punk_transferred_out(_address,_punk_index)
 
-  self.positions[_address][_punk_index] = empty(Position)
+  position = empty(Position)
   self.positions_punks[_punk_index] = empty(address)
 
   self.status.current_positions_open -= 1
   self.status.positions_liquidated += 1
+
+  self.positions[_address].positions[pos_i] = position
+  self.positions[_address].length -= 1
 
   log position_liquidated(_address,_punk_index)
 
@@ -738,10 +796,13 @@ def _attempt_liquidate(_address:address,_punk_index:uint256,manual:bool=False,fo
 def liquidate(_punk_index:uint256):
   assert msg.sender == self.owner
 
-  pos_owner: address = self.positions_punks[_punk_index]
+  punk_owner: address = self.positions_punks[_punk_index]
+
+  pos_i: uint256 = self._find_punk_position_index(punk_owner,_punk_index)
+  position: Position = self.positions[punk_owner].positions[pos_i]
 
   # force liquidation
-  self._attempt_liquidate(pos_owner,_punk_index,True,True)
+  self._attempt_liquidate(punk_owner,_punk_index,True,True)
 
 # process a chunk of positions
 @external
@@ -780,9 +841,15 @@ def tick() -> uint256:
     if self._attempt_flag(_address,_punk_index):
       self._attempt_liquidate(_address,_punk_index,False)
 
+    pos_i: uint256 = self._find_punk_position_index(_address,_punk_index)
+    position: Position = self.positions[_address].positions[pos_i]
+
     # add tick metrics
-    self.positions[_address][_punk_index].time_tick = block.timestamp
-    self.positions[_address][_punk_index].tick_count += 1
+    position.time_tick = block.timestamp
+    position.tick_count += 1
+
+    # save
+    self.positions[_address].positions[pos_i] = position
 
   self.status.time_last_tick = block.timestamp
 

@@ -75,12 +75,13 @@ def main():
   print("Cryptobunks balance:",_cryptopunks.balanceOf(account))
 
   # print preview position
-  print('Position preview:')
-  print_json(_vault.preview_position(PUNK_INDEX_APE,{'from':account}).dict())
+  # print('Position preview:')
+  # print_json(_vault.preview_position(PUNK_INDEX_APE,{'from':account}).dict())
 
   # open a new position with my floorpunk
   _vault.open_position(PUNK_INDEX_APE,{'from':account})
 
+  """
   # ..ui waits for deposit before borrow() is able to be called
   # ui can actually call _vault.get_punk_owner() until it's the vault address
 
@@ -117,22 +118,20 @@ def main():
   print('Position after repayment:')
   print_json(_vault.show_position(PUNK_INDEX_APE).dict())
 
-  # liquidate the position
+  # liquidate position
   # print('Liquidating the position:')
   # _vault.liquidate(PUNK_INDEX_APE,{'from':account})
 
-  # status
+  # print vault status
   print('Vault status:')
   print_json(_vault.show_status().dict())
 
   # @todo: currently working on this
   # print(_vault.show_all_positions(account))
 
-  """
-  # attempt to close position
-  print('Attempting to close the position..')
-  _vault.close_position(PUNK_INDEX_FLOOR,{'from':account})
-  """
+  # @todo: attempt to close position
+  # print('Attempting to close the position..')
+  # _vault.close_position(PUNK_INDEX_FLOOR,{'from':account})
 
   #####################################
 
