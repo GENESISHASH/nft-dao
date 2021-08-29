@@ -10,6 +10,10 @@ load_dotenv()
 
 from brownie import *
 
+# ascii art
+print(open('./.ascii.art','r').read())
+
+# select deployment network
 NETWORK = os.environ.get('NETWORK')
 
 if not NETWORK:
@@ -20,16 +24,12 @@ if NETWORK == 'mainnet':
   publish_source = True
 elif NETWORK == 'kovan':
   account = accounts.load('devel','oijoij')
-  publish_source = True
+  publish_source = False
 elif NETWORK == 'localhost':
   account = accounts.load('devel','oijoij')
   publish_source = False
 else:
-  account = accounts.load('devel','oijoij')
-  publish_source = False
-
-print(open('./.ascii.art','r').read())
-print("Deploying on network",NETWORK)
+  raise Exception("Unknown network")
 
 # example punks
 PUNK_INDEX_FLOOR = 2
@@ -39,7 +39,7 @@ PUNK_INDEX_ALIEN = 635
 def print_json(x): return print(json.dumps(x,sort_keys=False,indent=2))
 
 def main():
-  print('Deploying on network',NETWORK)
+  print('Deploying on network:',NETWORK)
 
   # deploy price oracle
   _price_oracle = price_oracle.deploy(os.environ.get('contract_name_price_oracle'),{'from':account},publish_source=publish_source)
@@ -47,7 +47,7 @@ def main():
   # set chainlink address in oracle
   if NETWORK == 'kovan':
     _price_oracle.set_chainlink_contract("0x9326BFA02ADD2366b30bacB125260Af641031331")
-  if NETWORK == 'mainnet':
+  elif NETWORK == 'mainnet':
     _price_oracle.set_chainlink_contract("0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419")
 
   # deploy dao
@@ -161,7 +161,7 @@ def main():
   print("_cryptopunks", prefix + str(_cryptopunks))
   print("_price_oracle", prefix + str(_price_oracle))
 
-  print("\n\n")
+  print("\n")
 
   return True
 

@@ -2,7 +2,6 @@
   "author": "taky",
   "scripts": {
     "test": "brownie run test",
-    "ropsten": "sh ./deploy-ropsten.sh",
     "kovan": "sh ./deploy-kovan.sh",
     "mainnet": "sh ./deploy-mainnet.sh"
   }
