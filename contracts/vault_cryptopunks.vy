@@ -496,35 +496,6 @@ def open_position(_punk_index:uint256):
 
   log position_opened(msg.sender,_punk_index,colat_value_usd)
 
-@external
-def check_asset_deposit(_punk_index:uint256) -> bool:
-  assert _punk_index < 10000, 'invalid_punk'
-  assert self.positions_punks[_punk_index] == msg.sender, 'position_not_owned'
-
-  punk_owner: address = self._get_punk_owner(_punk_index)
-  if punk_owner != self: return False
-
-  pos_i: uint256 = self._find_punk_position_index(msg.sender,_punk_index)
-  position: Position = self.positions[msg.sender].positions[pos_i]
-
-  assert position != empty(Position), 'position_not_found'
-
-  if position.asset_deposited: return True
-
-  position.asset_deposited = True
-  position.time_deposited = block.timestamp
-
-  self.status.assets_deposited += 1
-
-  log punk_transfered_in(msg.sender,_punk_index)
-
-  if position.time_interest == 0:
-    position.time_interest = block.timestamp
-
-  self.positions[msg.sender].positions[pos_i] = position
-
-  return True
-
 @view
 @internal
 def _find_punk_position_index(_address:address,_punk_index:uint256) -> uint256:
@@ -546,7 +517,35 @@ def _find_punk_position_index(_address:address,_punk_index:uint256) -> uint256:
 
   raise 'position_empty'
 
-# update a position's health score
+@external
+def check_asset_deposit(_punk_index:uint256) -> bool:
+  assert _punk_index < 10000, 'invalid_punk'
+  assert self.positions_punks[_punk_index] == msg.sender, 'position_not_owned'
+
+  punk_owner: address = self._get_punk_owner(_punk_index)
+  if punk_owner != self: return False
+
+  pos_i: uint256 = self._find_punk_position_index(msg.sender,_punk_index)
+  position: Position = self.positions[msg.sender].positions[pos_i]
+
+  assert position != empty(Position), 'position_not_found'
+
+  if position.asset_deposited: return True
+
+  position.asset_deposited = True
+  position.time_deposited = block.timestamp
+
+  self.status.assets_deposited += 1
+
+  log punk_transferred_in(msg.sender,_punk_index)
+
+  if position.time_interest == 0:
+    position.time_interest = block.timestamp
+
+  self.positions[msg.sender].positions[pos_i] = position
+
+  return True
+
 @internal
 def _update_position_health_score(_address:address,_punk_index:uint256):
   pos_i: uint256 = self._find_punk_position_index(_address,_punk_index)
@@ -567,8 +566,7 @@ def show_position(_punk_index:uint256) -> Position:
   punk_owner: address = self.positions_punks[_punk_index]
   pos_i: uint256 = self._find_punk_position_index(punk_owner,_punk_index)
 
-  position: Position = self.positions[punk_owner].positions[pos_i]
-  return position
+  return self.positions[punk_owner].positions[pos_i]
 
 @external
 def borrow(_punk_index:uint256,_amount:uint256):
@@ -594,7 +592,7 @@ def borrow(_punk_index:uint256,_amount:uint256):
     self.positions[msg.sender].positions[pos_i] = position
     self.status.assets_deposited += 1
 
-    log punk_transfered_in(msg.sender,_punk_index)
+    log punk_transferred_in(msg.sender,_punk_index)
 
   if position.time_interest == 0:
     position.time_interest = block.timestamp
@@ -605,22 +603,18 @@ def borrow(_punk_index:uint256,_amount:uint256):
 
   assert _amount <= avail_credit, 'insufficient_credit'
 
-  # mint stablecoin
   StableCoin(self.stablecoin_contract).mint(msg.sender,_amount)
 
   position.credit_minted += _amount
   position.debt_principal += _amount
   position.debt_total += _amount
+  position.repaid = False
+
+  self.positions[msg.sender].positions[pos_i] = position
 
   self.status.usd_mint_count += 1
   self.status.usd_principal_issued += _amount
   self.status.positions_borrows += 1
-
-  # make sure this is marked as non-repaid in case the user borrowed against
-  # a position that they repaid on at one time in the past
-  position.repaid = False
-
-  self.positions[msg.sender].positions[pos_i] = position
 
   log credit_minted(msg.sender,_punk_index,_amount)
 
@@ -630,8 +624,8 @@ def repay(_punk_index:uint256,_amount:uint256):
   position: Position = self.positions[msg.sender].positions[pos_i]
 
   assert msg.sender == position.owner
-  assert position != empty(Position), 'position_not_found'
-  assert not position.liquidated, 'position_liquidated'
+  assert position != empty(Position)
+  assert not position.liquidated
 
   # send payment to vault
   StableCoin(self.stablecoin_contract).minterTransferFrom(msg.sender,self,_amount)
@@ -809,7 +803,7 @@ def _attempt_liquidate(_address:address,_punk_index:uint256,manual:bool=False,fo
     if not manual or not forced: return False
 
   if not forced:
-    assert position.flagged, 'position_not_flagged'
+    assert position.flagged
 
   # perform liquidation
   CryptoPunks(self.cryptopunks_contract).transferPunk(self.dao_contract,_punk_index)
@@ -835,10 +829,6 @@ def liquidate(_punk_index:uint256):
 
   punk_owner: address = self.positions_punks[_punk_index]
 
-  pos_i: uint256 = self._find_punk_position_index(punk_owner,_punk_index)
-  position: Position = self.positions[punk_owner].positions[pos_i]
-
-  # force liquidation
   self._attempt_liquidate(punk_owner,_punk_index,True,True)
 
 @view
@@ -846,7 +836,6 @@ def liquidate(_punk_index:uint256):
 def get_status() -> Status:
   return self.status
 
-# process a chunk of positions
 @external
 def tick() -> uint256:
   self._update_oracle_pricing()
@@ -894,6 +883,5 @@ def tick() -> uint256:
     self.positions[_address].positions[pos_i] = position
 
   self.status.time_last_tick = block.timestamp
-
   return found
 

@@ -4,9 +4,18 @@ networks:
         gas_limit: max
         gas_buffer: 1
         gas_price: 0
-        reverting_tx_gas_limit: max
+        priority_fee: null
+        reverting_tx_gas_limit: false
         default_contract_owner: true
         cmd_settings: null
+    live:
+        gas_limit: auto
+        gas_buffer: 1.1
+        gas_price: auto
+        priority_fee: null
+        reverting_tx_gas_limit: false
+        default_contract_owner: false
+        explorer:
     kovan:
         gas_limit: max
         gas_buffer: 1
@@ -23,12 +32,6 @@ networks:
         default_contract_owner: true
         cmd_settings: null
         explorer: https://api-ropsten.etherscan.io/api
-    live:
-        gas_limit: auto
-        gas_buffer: 1.1
-        gas_price: auto
-        reverting_tx_gas_limit: false
-        default_contract_owner: false
 compiler:
     evm_version: null
     solc:
