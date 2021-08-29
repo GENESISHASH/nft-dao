@@ -143,19 +143,8 @@ def main():
   bulk += ("\nico_token" + prefix + str(_ico_token))
   bulk += "\n```"
 
-  if os.environ.get('slack_enabled'):
-    print('slack is enabled')
-    slack_channel = os.environ.get('slack_channel')
-    slack_webhook_url = os.environ.get('slack_webhook_url')
+  print('\n' + bulk + '\n')
 
-    command = 'curl -X POST --data-urlencode "payload={\"channel\": \"#contracts\", \"username\": \"webhookbot\", \"text\": \"This is posted to #contracts and comes from a bot named webhookbot.\", \"icon_emoji\": \":ghost:\"}" https://hooks.slack.com/services/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'
-    print(command)
-
-    #print(f'curl -X POST --data-urlencode "payload={"channel": "{slack_channel}", "username": "webhookbot", "text": "This is posted to #contracts and comes from a bot named webhookbot.", "icon_emoji": ":ghost:"}" https://hooks.slack.com/services/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')
-    print('DONE')
-
-  print("\n")
   print('Finished')
-
   return True
 

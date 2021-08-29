@@ -264,11 +264,6 @@ def __init__(_name:String[64],_stablecoin_addr:address,_cryptopunks_addr:address
 
   log contract_created(block.timestamp)
 
-@view
-@external
-def show_status() -> Status:
-  return self.status
-
 @internal
 def _update_oracle_pricing() -> bool:
   Oracle(self.oracle_contract).update()
