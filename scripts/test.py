@@ -100,14 +100,14 @@ def main():
   print('Borrowing USD',borrow_amount)
   _vault.borrow(PUNK_INDEX_APE,(borrow_amount * 10**18),{'from':account})
 
-  for i in range(5): _vault.tick()
+  _vault.tick()
 
   # print position
   print('Position after borrow:')
   print_json(_vault.show_position(PUNK_INDEX_APE).dict())
 
   # add some interest to this thing
-  for i in range(5): _vault.tick()
+  _vault.tick()
 
   # make a payment against my position
   print('Making repayment for',repay_amount)
