@@ -1,5 +1,5 @@
 {
-  "author": "taky",
+  "author": "taky@taky.com",
   "scripts": {
     "test": "brownie run test",
     "kovan": "sh ./deploy-kovan.sh",
